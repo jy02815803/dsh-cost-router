@@ -1,0 +1,13 @@
+# dsh-cost-router bundle patch.
+#
+# 一行 loader 同时提供 Host 侧与模型侧能力：
+#   - Host 侧（lib/host.js）：注册 cost_router_plan / run / report / models
+#     四个工具，并内嵌注册 cost-router 技能。
+#   - 模型侧不另起进程：所有模型调用都走宿主已注册的 ctx.llm provider，
+#     所以插件不持有任何 API key，也不重复造 HTTP 层。
+#
+# loader id 与包名保持一致，避免与其他插件的行 id 冲突。
+- insert:
+    - id: dsh-cost-router
+      name: 'dsh-cost-router'
+      config: {}

@@ -1,0 +1,11 @@
+{
+  "meta": {
+    "title": "Cost Router",
+    "description": "Splits complex tasks and assigns each subtask to the cheapest model that can actually do it."
+  },
+  "title": "Cost Router",
+  "autoPlan.title": "Auto-triage (decide whether to split first)",
+  "autoPlan.desc": "When on, every task first gets a free local check: split it across models when worth it, otherwise finish it with a single model. The check is pure local rules - no model call, no credits spent.",
+  "autoPlan.note": "Takes effect immediately, no restart needed. You are only notified when a split happens.",
+  "autoPlan.failed": "Could not read/write the switch state. Make sure the Harness is running; the four tools still work."
+}

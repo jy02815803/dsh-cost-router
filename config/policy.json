@@ -1,0 +1,29 @@
+{
+  "_说明": "路由策略。可直接改这个文件，不用动代码。floors 是各任务类型的能力门槛（0-5）；能力是硬门槛，成本是目标。",
+
+  "floors": {
+    "vision": 5,
+    "longdoc": 3,
+    "reasoning": 4,
+    "code": 4,
+    "writing": 4,
+    "text": 3,
+    "bulk": 3
+  },
+
+  "_capabilityOverrides说明": "手动给某个模型打分。键是模型 id 或显示名，值是 0-5 的能力分。0 表示这个模型不具备该能力，绝不会被选。",
+  "capabilityOverrides": {},
+
+  "_synthesisModel说明": "手动指定汇总模型。留空则自动选：能力最强、上下文窗口最大的那个（汇总决定交付质量，不看成本）。",
+  "synthesisModel": null,
+
+  "_onlyProviders说明": "只在这些 provider 里选模型。留空表示用 DSH 里所有已注册的渠道。",
+  "onlyProviders": null,
+
+  "_调参提示": [
+    "某个子任务老派给贵的模型：把对应 floor 调低一档。",
+    "某个子任务质量不行：调高 floor，或在 capabilityOverrides 里给某个模型加分。",
+    "想省钱优先于质量：所有 floor 统一减 1（视觉那条不要动——识图能力是断崖式的）。",
+    "想只看某个渠道：填 onlyProviders，例如 [\"workbuddy\"]。"
+  ]
+}
