@@ -5,3 +5,5 @@ Thumbs.db
 dsh-cost-router.bak-*/
 *.tgz
 .npm-cache/
+.playwright-cli/
+output/playwright/
