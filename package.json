@@ -20,6 +20,10 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
     "LICENSE"
   ],
   "keywords": [

@@ -1,0 +1,48 @@
+name: 问题报告 / Bug report
+description: 报告安装、界面、路由或成本口径问题
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: 请勿粘贴密码、API key、token 或任务原文。
+  - type: input
+    id: dsh-version
+    attributes:
+      label: DSH 版本
+      placeholder: 0.2.1-rc.3
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: 插件版本
+      placeholder: 0.4.1
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 问题范围
+      options:
+        - 安装或启动
+        - 设置页开关
+        - 模型目录
+        - 路由或拆解
+        - 成本或预算
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 脱敏诊断信息
+      description: 可粘贴诊断页输出或脱敏日志片段
+    validations:
+      required: false

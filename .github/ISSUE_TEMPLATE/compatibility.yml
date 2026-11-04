@@ -1,0 +1,28 @@
+name: 兼容性样本 / Compatibility
+description: 提交脱敏模型目录或 DSH 版本兼容问题
+title: '[Compatibility] '
+labels: ['compatibility']
+body:
+  - type: markdown
+    attributes:
+      value: 不要提交 API key、token、账号信息或任务正文。
+  - type: input
+    id: environment
+    attributes:
+      label: DSH / 操作系统 / profile
+      placeholder: DSH 0.2.1-rc.3, Windows 11, web
+    validations:
+      required: true
+  - type: textarea
+    id: catalog
+    attributes:
+      label: 脱敏模型目录字段
+      description: provider、model id、inputModalities、contextWindow、creditMultiplier
+    validations:
+      required: false
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 期望与实际行为
+    validations:
+      required: true

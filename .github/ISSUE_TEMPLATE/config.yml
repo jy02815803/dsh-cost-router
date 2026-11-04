@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞请私下报告
+    url: https://github.com/jy02815803/dsh-cost-router/security/advisories/new
+    about: 不要在公开 issue 中披露凭据或漏洞细节
