@@ -4,7 +4,7 @@
 
 **核心主张：省钱靠的不是"选对模型"，而是"上下文隔离" + "能力匹配"。**
 
-当前版本 **0.4.0**，变更见文末「版本变更」。
+当前版本 **0.4.1**，变更见文末「版本变更」。
 
 ---
 
@@ -189,7 +189,8 @@ dsh-cost-router/
 │   └── orchestrator.js   # plan / run / report 三个动作
 └── test/
     ├── smoke.test.mjs        # 主流程冒烟测试
-    └── auto-plan.test.mjs    # 自动研判开关测试
+    ├── auto-plan.test.mjs    # 自动研判开关与状态持久化测试
+    └── webserver-lifecycle.test.mjs  # 开关接口启动竞态与生命周期测试
 ```
 
 ---
@@ -225,11 +226,14 @@ dsh plugin --profile web add file:D:/DSharness/dsh-cost-router
 ```sh
 node test/smoke.test.mjs
 node test/auto-plan.test.mjs
+node test/webserver-lifecycle.test.mjs
 ```
 
 `smoke.test.mjs` 覆盖：任务分类、异构判定、成本口径（含"负倍率不能当免费"）、settings 目录抽取、路由策略（免费优先 / 视觉门槛 / 强制强模型 / 显式 pin）、端到端编排、失败隔离、多模态通道（图片只进视觉子任务）、预算熔断、分解结果非法 JSON、中止向上抛、`longdoc` 能力评分、多次 run 预算隔离、客户端 inject 清单。
 
-`auto-plan.test.mjs` 覆盖：文本抽取、短文本不触发、`minChars` 配置读取、liveState 实时开关、去重、状态优先级。
+`auto-plan.test.mjs` 覆盖：文本抽取、短文本不触发、`minChars` 配置读取、liveState 实时开关、去重、状态优先级、旧格式兼容、原子写入与不可写目录降级。
+
+`webserver-lifecycle.test.mjs` 覆盖：无 `webServer` 时四个工具仍注册、服务晚发布、GET/HEAD/POST、同源校验、请求体上限、服务替换、重复发布与插件卸载。全部在隔离的临时 `DSH_HOME` 中运行。
 
 ---
 
@@ -244,6 +248,17 @@ node test/auto-plan.test.mjs
 ---
 
 ## 版本变更
+
+### 0.4.1
+
+**修好了界面开关拿不到状态、点击后不生效的根因。** 0.4.0 在 apply 阶段一次性读取 `webServer`；Host 插件通常早于 Web 服务加载，因此这次读取会得到 `undefined`，接口路由永久没有注册，设置页开关就没有可用的数据源。
+
+- 改用 `ctx.inject(['webServer'], ...)` 等待服务发布；服务被替换时同一个回调会重新运行。
+- 路由 disposer 交给注入作用域的 `ctx.effect()` 管理，替换或卸载时清理旧路由，避免重复注册。
+- GET、HEAD、POST 的状态接口补齐异常收口、字段校验、同源校验与按 UTF-8 字节计算的 4 KiB 请求体上限；超大请求会明确返回 `413` 而不会切断连接。
+- 状态文件同时保存 `autoPlanEnabled` 与 `autoPlanMinChars`，兼容 0.4.0 旧格式；写盘改为临时文件加原子替换，候选目录用真实写入探测，失败时降级为当前进程内生效。
+- 测试全部隔离到临时 `DSH_HOME`，运行测试不会改写用户真实的开关状态。
+- 版本号 `0.4.0` → `0.4.1`。
 
 ### 0.4.0
 
@@ -273,7 +288,7 @@ node test/auto-plan.test.mjs
 ```sh
 git init
 git add .
-git commit -m "dsh-cost-router 0.4.0"
+git commit -m "dsh-cost-router 0.4.1"
 git branch -M main
 git remote add origin https://github.com/jy02815803/dsh-cost-router.git
 git push -u origin main

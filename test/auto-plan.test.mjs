@@ -6,9 +6,38 @@
  */
 
 import assert from 'node:assert/strict'
-import { rmSync } from 'node:fs'
-import { shouldAutoPlan, renderHint, extractUserText, installAutoPlan } from '../lib/auto-plan.js'
-import { resolveInitialEnabled, resolveStatePath, writePersistedEnabled, readPersistedEnabled } from '../lib/state.js'
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { registerHooks } from 'node:module'
+import os from 'node:os'
+import path from 'node:path'
+
+// auto-plan.js 静态依赖 DSH 的 createUserMessage；本测试只验证消息形状与开关
+// 逻辑，不启动 DSH，因此用最小模块桩替代该依赖。状态测试另用独立 DSH_HOME，
+// 绝不读写当前用户真实的 state.json。
+const LLM_STUB_URL = 'data:text/javascript,export function createUserMessage(input)%7Breturn%7Brole%3A%22user%22%2C...input%7D%7D'
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier === '@deepseek-ai/dsh-llm') {
+      return { url: LLM_STUB_URL, shortCircuit: true }
+    }
+    return nextResolve(specifier, context)
+  },
+})
+
+const {
+  shouldAutoPlan,
+  renderHint,
+  extractUserText,
+  installAutoPlan,
+} = await import('../lib/auto-plan.js')
+const {
+  readPersistedEnabled,
+  readPersistedState,
+  resolveInitialEnabled,
+  resolveStatePath,
+  writePersistedEnabled,
+  writePersistedState,
+} = await import('../lib/state.js')
 
 const policy = { autoPlan: { enabled: true, minChars: 12 } }
 
@@ -163,45 +192,144 @@ function collectHooks() {
   assert.equal(shouldAutoPlan('帮我写个通知', {}).trigger, false, '默认阈值 12 字，6 字短句不触发')
   assert.equal(shouldAutoPlan('帮我起草一份正式的放假通知', {}).trigger, true, '超过默认阈值就触发')
 }
-// ── 状态优先级：状态文件 > 插件配置 > 内置默认 ──────────────────────────────
+// ── 状态优先级与磁盘格式：全程在独立临时目录中运行 ───────────────────────────
 {
-  // 内置默认应为开启（目标用户是小白，装完即用）。
-  const fallback = resolveInitialEnabled(undefined)
-  assert.equal(typeof fallback.enabled, 'boolean', '默认值必须是布尔')
-  assert.equal(fallback.enabled, true, '内置默认应为开启')
+  const originalDshHome = process.env.DSH_HOME
+  const originalUserProfile = process.env.USERPROFILE
+  const originalHome = process.env.HOME
+  const sandbox = mkdtempSync(path.join(os.tmpdir(), 'dsh-cost-router-state-'))
+  const goodRoot = path.join(sandbox, 'good-profile')
+  const badRoot = path.join(sandbox, 'bad-home')
+  const stateDir = path.join(goodRoot, '.dsh', 'dsh-cost-router')
+  const stateFile = path.join(stateDir, 'state.json')
 
-  // 配置能覆盖默认。
-  const fromConfig = resolveInitialEnabled({ autoPlan: { enabled: false } })
-  assert.equal(fromConfig.enabled, false, '配置可以关掉')
-
-  // 状态文件能覆盖配置（用户点过的选择优先）。
-  //
-  // 注意：这里会动到**真实**的状态文件，所以先记下原值、结束时原样还原。
-  // 早先的版本直接写死 false，等于把用户的开关偷偷关掉了。
-  const original = readPersistedEnabled()
-  const wrote = writePersistedEnabled(true)
-  const afterWrite = resolveInitialEnabled({ autoPlan: { enabled: false } })
-  if (wrote) {
-    assert.equal(afterWrite.enabled, true, '状态文件应覆盖配置')
-    assert.equal(readPersistedEnabled(), true, '应能读回刚写入的值')
-  } else {
-    // 磁盘不可写时降级成内存，也不能抛错。
-    assert.equal(afterWrite.enabled, true, '磁盘不可写时至少内存生效')
+  const restoreEnv = (name, value) => {
+    if (value === undefined) delete process.env[name]
+    else process.env[name] = value
   }
 
-  // 还原现场。
-  if (original === null) {
-    const file = resolveStatePath()
-    if (file !== null) {
-      try {
-        rmSync(file, { force: true })
-      } catch {
-        /* 删不掉就算了，不影响断言 */
-      }
+  try {
+    // 用一个普通文件占住 bad-home/dsh-cost-router，使 mkdirSync 必然失败，
+    // 以此验证“候选目录不可写时切换到下一个”，不依赖 Windows ACL。
+    mkdirSync(badRoot, { recursive: true })
+    writeFileSync(path.join(badRoot, 'dsh-cost-router'), 'not-a-directory')
+    mkdirSync(stateDir, { recursive: true })
+
+    process.env.DSH_HOME = badRoot
+    process.env.USERPROFILE = goodRoot
+    delete process.env.HOME
+
+    // 文件不存在：配置优先于内置默认。
+    const absentDefault = resolveInitialEnabled(undefined)
+    assert.deepEqual(
+      { enabled: absentDefault.enabled, minChars: absentDefault.minChars, source: absentDefault.source },
+      { enabled: true, minChars: 12, source: 'default' },
+      '无状态文件且无配置时应使用内置默认',
+    )
+    const absentConfig = resolveInitialEnabled({ autoPlan: { enabled: false, minChars: 30 } })
+    assert.deepEqual(
+      { enabled: absentConfig.enabled, minChars: absentConfig.minChars, source: absentConfig.source },
+      { enabled: false, minChars: 30, source: 'config' },
+      '无状态文件时应采用插件配置',
+    )
+
+    // 兼容 0.4.0 的旧格式：只有 autoPlanEnabled，不应丢失开关值。
+    writeFileSync(stateFile, JSON.stringify({ autoPlanEnabled: false }))
+    assert.deepEqual(readPersistedState(), { enabled: false }, '应兼容旧格式 autoPlanEnabled')
+    const oldFormat = resolveInitialEnabled({ autoPlan: { enabled: true, minChars: 30 } })
+    assert.equal(oldFormat.enabled, false, '旧格式状态应覆盖配置里的 enabled')
+    assert.equal(oldFormat.minChars, 30, '旧格式缺少 minChars 时应从配置补齐')
+    assert.equal(oldFormat.source, 'file', '旧格式状态来源应标记为 file')
+
+    // 新格式同时保存开关与阈值。
+    writeFileSync(stateFile, JSON.stringify({ autoPlanEnabled: true, autoPlanMinChars: 20 }))
+    const newFormat = resolveInitialEnabled({ autoPlan: { enabled: false, minChars: 30 } })
+    assert.deepEqual(
+      { enabled: newFormat.enabled, minChars: newFormat.minChars, source: newFormat.source },
+      { enabled: true, minChars: 20, source: 'file' },
+      '新格式状态应同时覆盖 enabled 与 minChars',
+    )
+
+    // 损坏 JSON、非对象和非法阈值都应安全降级，不能抛错。
+    writeFileSync(stateFile, '{not json')
+    assert.deepEqual(readPersistedState(), {}, '损坏 JSON 应视为无持久化状态')
+    writeFileSync(stateFile, '[]')
+    assert.deepEqual(readPersistedState(), {}, '数组不是合法状态对象')
+    writeFileSync(stateFile, JSON.stringify({ autoPlanEnabled: 'yes', autoPlanMinChars: 0 }))
+    assert.deepEqual(readPersistedState(), {}, '非法字段类型应被丢弃')
+    const invalidFallback = resolveInitialEnabled({ autoPlan: { enabled: false, minChars: 7.9 } })
+    assert.deepEqual(
+      { enabled: invalidFallback.enabled, minChars: invalidFallback.minChars, source: invalidFallback.source },
+      { enabled: false, minChars: 7, source: 'config' },
+      '非法状态应回退到配置，合法小数阈值应归一成整数',
+    )
+
+    // 只写 enabled 时必须保留已有 minChars；写入后应能重新读取。
+    writeFileSync(stateFile, JSON.stringify({ autoPlanEnabled: true, autoPlanMinChars: 18 }))
+    assert.equal(writePersistedEnabled(false), true, '可写目录中的状态应成功落盘')
+    assert.deepEqual(
+      readPersistedState(),
+      { enabled: false, minChars: 18 },
+      'writePersistedEnabled 不应抹掉已有阈值',
+    )
+    assert.equal(readPersistedEnabled(), false, '旧读取 API 应继续可用')
+
+    // 完整写入与原子替换后，状态文件应保持新格式。
+    assert.equal(writePersistedState({ enabled: true, minChars: 9.7 }), true)
+    assert.deepEqual(
+      JSON.parse(readFileSync(stateFile, 'utf8')),
+      { autoPlanEnabled: true, autoPlanMinChars: 9 },
+      '新格式应落盘且阈值取整',
+    )
+    assert.equal(
+      readdirSync(stateDir).some((name) => name.includes('.tmp')),
+      false,
+      '成功写入后不应残留临时文件',
+    )
+
+    // DSH_HOME 不可写时切换到 USERPROFILE/.dsh，并保证不留下探测文件。
+    process.env.DSH_HOME = badRoot
+    const fallbackPath = resolveStatePath()
+    assert.equal(fallbackPath, stateFile, '不可写的 DSH_HOME 应切换到下一个候选目录')
+    assert.equal(
+      readdirSync(stateDir).some((name) => name.startsWith('.state-write-probe-')),
+      false,
+      '可写探测不能残留 probe 文件',
+    )
+
+    // 切回不可写目录后，写盘失败应降级为内存状态且不抛错；随后成功写盘
+    // 会清掉内存兜底，磁盘重新成为唯一来源。
+    process.env.DSH_HOME = badRoot
+    process.env.USERPROFILE = path.join(sandbox, 'also-unwritable')
+    mkdirSync(process.env.USERPROFILE, { recursive: true })
+    mkdirSync(path.join(process.env.USERPROFILE, '.dsh'), { recursive: true })
+    writeFileSync(path.join(process.env.USERPROFILE, '.dsh', 'dsh-cost-router'), 'not-a-directory')
+    assert.equal(writePersistedState({ enabled: false, minChars: 24 }), false, '全部目录不可写时应只保留内存状态')
+    const memoryFallback = resolveInitialEnabled({ autoPlan: { enabled: true, minChars: 12 } })
+    assert.deepEqual(
+      { enabled: memoryFallback.enabled, minChars: memoryFallback.minChars, source: memoryFallback.source },
+      { enabled: false, minChars: 24, source: 'memory' },
+      '写盘失败时应在当前进程内即时生效',
+    )
+
+    process.env.DSH_HOME = badRoot
+    process.env.USERPROFILE = goodRoot
+    assert.equal(writePersistedState({ enabled: true, minChars: 12 }), true, '恢复可写目录后应能落盘')
+    const afterRecovery = resolveInitialEnabled({ autoPlan: { enabled: false, minChars: 30 } })
+    assert.deepEqual(
+      { enabled: afterRecovery.enabled, minChars: afterRecovery.minChars, source: afterRecovery.source },
+      { enabled: true, minChars: 12, source: 'file' },
+      '成功写盘后应清除内存兜底并由文件提供状态',
+    )
+  } finally {
+    restoreEnv('DSH_HOME', originalDshHome)
+    restoreEnv('USERPROFILE', originalUserProfile)
+    restoreEnv('HOME', originalHome)
+    try {
+      rmSync(sandbox, { recursive: true, force: true })
+    } catch {
+      // 临时目录清理失败不改变已完成的断言。
     }
-  } else {
-    writePersistedEnabled(original)
-    assert.equal(readPersistedEnabled(), original, '应还原成测试前的值')
   }
 }
 

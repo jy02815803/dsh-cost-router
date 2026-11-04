@@ -4,3 +4,4 @@ node_modules/
 Thumbs.db
 dsh-cost-router.bak-*/
 *.tgz
+.npm-cache/
