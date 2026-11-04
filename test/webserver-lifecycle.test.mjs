@@ -301,10 +301,10 @@ try {
   assert.deepEqual(parseJson(getAfterPost), { enabled: false, minChars: 20, persisted: true })
 
   // 诊断接口只暴露脱敏排障字段，不返回任务正文、token 或凭据。
-  const diagRes = await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state/diagnostics' })
+  const diagRes = await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state?diagnostics=1' })
   assert.equal(diagRes.status, 200)
   const diagnostics = parseJson(diagRes)
-  assert.equal(diagnostics.version, '0.4.2')
+  assert.equal(diagnostics.version, '0.4.2.1')
   assert.equal(diagnostics.stateRoute, '/dsh-cost-router/state')
   assert.equal(diagnostics.webServer, true)
   assert.deepEqual(diagnostics.tools, [

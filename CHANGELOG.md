@@ -10,6 +10,13 @@
 - 0.6.0：质量、兼容矩阵、多语言规则与自动化评测。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
 
+## [0.4.2.1] - 2026-11-04
+
+### Fixed
+
+- 诊断接口改为 `/dsh-cost-router/state?diagnostics=1`，兼容 DSH `exact` 路由只匹配原路径的行为。
+- 设置页「成本路由」增加运行状态卡片，显示版本、配置来源、工具数、待执行方案与最近错误摘要。
+
 ## [0.4.2] - 2026-11-04
 
 ### Added
@@ -48,7 +55,8 @@
 
 - 补齐 `settings.plugins.tab` 所需的客户端依赖；修复 `minChars`、中止、跨 run 预算隔离与 `longdoc` 评分。
 
-[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.4.2.1...HEAD
+[0.4.2.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2.1
 [0.4.2]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2
 [0.4.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.1
 [0.4.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.0
