@@ -200,6 +200,16 @@ dsh-cost-router/
 
 ## 安装
 
+### 推荐给测试者：下载 Release 包
+
+打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.4.2](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2)，直接下载地址：
+
+```text
+https://github.com/jy02815803/dsh-cost-router/releases/download/v0.4.2/dsh-cost-router-0.4.2.tgz
+```
+
+在 DSH Desktop 的「插件」页选择本地包/本地目录安装，或把包解压后通过 profile 的 `file:` 依赖安装。**安装完成后必须正常重启 Harness**；客户端依赖图只在启动时组装，只刷新页面不生效。开源协作也可 fork、提 Issue 或 Pull Request。
+
 ### 方式一：从 GitHub 安装
 
 ```sh
@@ -221,6 +231,10 @@ dsh plugin --profile web add file:D:/DSharness/dsh-cost-router
 3. 拿一个多模态任务调 `cost_router_plan`，应该返回「拆」和方案。
 
 > 如果第 1 步看不到页签，先确认 Harness 已重启——客户端依赖图只在启动时组装，只刷新页面不生效。
+
+### 测试反馈
+
+欢迎通过 [Issues](https://github.com/jy02815803/dsh-cost-router/issues/new/choose) 反馈；Bug 选「Bug 报告」，不同 DSH/系统组合选「兼容性反馈」。请附上版本号、DSH 版本、操作系统、安装方式、复现步骤、期望/实际结果，以及去掉 API key、token 和任务正文后的日志。测试时优先用 `cost_router_plan`、`cost_router_models` 等不产生费用的工具，不要公开真实凭据或敏感内容；安全漏洞请走 [Security Advisories](https://github.com/jy02815803/dsh-cost-router/security/advisories/new)。
 
 ---
 
