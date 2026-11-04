@@ -181,9 +181,10 @@ function createResponse() {
 }
 
 /** 造一个可手动发送 body 事件的 request 桩。 */
-function createRequest({ method = 'GET', host = '127.0.0.1:43210', headers = {}, body } = {}) {
+function createRequest({ method = 'GET', host = '127.0.0.1:43210', headers = {}, body, path = '/dsh-cost-router/state' } = {}) {
   const req = new EventEmitter()
   req.method = method
+  req.url = path
   req.headers = { host, ...headers }
   req.bodyFixture = body
   return req
@@ -264,6 +265,7 @@ try {
   assert.equal(routes[0].kind, 'exact')
   assert.equal(routes[0].path, '/dsh-cost-router/state')
   const stateRoute = routes[0]
+  assert.equal(typeof host.warnings.length, 'number')
 
   // GET 返回实时状态；初始状态来自配置，尚无状态文件。
   const getRes = await request(routes[0], { method: 'GET' })
@@ -297,6 +299,21 @@ try {
   // 再读一次应反映刚才持久化的值。
   const getAfterPost = await request(routes[0], { method: 'GET' })
   assert.deepEqual(parseJson(getAfterPost), { enabled: false, minChars: 20, persisted: true })
+
+  // 诊断接口只暴露脱敏排障字段，不返回任务正文、token 或凭据。
+  const diagRes = await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state/diagnostics' })
+  assert.equal(diagRes.status, 200)
+  const diagnostics = parseJson(diagRes)
+  assert.equal(diagnostics.version, '0.4.2')
+  assert.equal(diagnostics.stateRoute, '/dsh-cost-router/state')
+  assert.equal(diagnostics.webServer, true)
+  assert.deepEqual(diagnostics.tools, [
+    'cost_router_plan', 'cost_router_run', 'cost_router_report', 'cost_router_models',
+  ])
+  assert.equal(diagnostics.autoPlan.enabled, false)
+  assert.ok(Array.isArray(diagnostics.tools))
+  assert.equal(JSON.stringify(diagnostics).includes('token'), false, '诊断信息不能含 token 字样')
+  assert.equal(JSON.stringify(diagnostics).includes('task'), false, '诊断信息不能含任务正文')
 
   // 非法方法与跨站请求要被拒绝。
   const putRes = await request(routes[0], { method: 'PUT' })

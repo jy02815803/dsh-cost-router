@@ -4,7 +4,7 @@
 
 **核心主张：省钱靠的不是"选对模型"，而是"上下文隔离" + "能力匹配"。**
 
-当前版本 **0.4.1**，变更见文末「版本变更」。
+当前版本 **0.4.2**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。
 
 ---
 
@@ -81,8 +81,8 @@
 
 | 工具 | 作用 | 花钱吗 |
 |---|---|---|
-| `cost_router_plan` | 研判 → 给出方案和预估成本 | 只有需要拆时才花一次分解费 |
-| `cost_router_run` | 按方案执行，返回成品和真实花费 | 花 |
+| `cost_router_plan` | 研判 → 给出 `planId`、方案和预估成本 | 只有需要拆时才花一次分解费 |
+| `cost_router_run` | 传 `planId` 复用已确认方案执行，返回成品和真实花费 | 花 |
 | `cost_router_report` | 逐次调用明细、各模型花费、合计 | 不花 |
 | `cost_router_models` | 列出可用模型：是否支持图片、上下文窗口、成本倍率 | 不花 |
 
@@ -90,9 +90,9 @@
 
 ```
 用户：看这五张扫描件截图，提取表格数据，再写一份分析报告
-  → cost_router_plan  → 「拆，3 块：识图(免费VL) / 推理(中档) / 写稿(中档)，预估 0.004」
+  → cost_router_plan  → 「拆，3 块：识图(免费VL) / 推理(中档) / 写稿(中档)，预估 0.004，plan_…」
   → 用户确认
-  → cost_router_run   → 成品 + 「本次 5 次调用，合计 0.0031」
+  → cost_router_run（planId=plan_…）→ 成品 + 「本次 5 次调用，合计 0.0031」
 ```
 
 ---
@@ -187,10 +187,13 @@ dsh-cost-router/
 │   ├── router.js         # 分类、异构判定、能力匹配、成本估算
 │   ├── llm.js            # 统一的模型调用与 usage 采集
 │   └── orchestrator.js   # plan / run / report 三个动作
+│   ├── plan-store.js     # 已确认方案的进程内存储
+│   └── runtime.js        # 工具实例间共享的运行时状态
 └── test/
     ├── smoke.test.mjs        # 主流程冒烟测试
     ├── auto-plan.test.mjs    # 自动研判开关与状态持久化测试
     └── webserver-lifecycle.test.mjs  # 开关接口启动竞态与生命周期测试
+    └── trust-contract.test.mjs       # 可信契约与自动研判回归测试
 ```
 
 ---
@@ -227,6 +230,7 @@ dsh plugin --profile web add file:D:/DSharness/dsh-cost-router
 node test/smoke.test.mjs
 node test/auto-plan.test.mjs
 node test/webserver-lifecycle.test.mjs
+node test/trust-contract.test.mjs
 ```
 
 `smoke.test.mjs` 覆盖：任务分类、异构判定、成本口径（含"负倍率不能当免费"）、settings 目录抽取、路由策略（免费优先 / 视觉门槛 / 强制强模型 / 显式 pin）、端到端编排、失败隔离、多模态通道（图片只进视觉子任务）、预算熔断、分解结果非法 JSON、中止向上抛、`longdoc` 能力评分、多次 run 预算隔离、客户端 inject 清单。
@@ -234,6 +238,8 @@ node test/webserver-lifecycle.test.mjs
 `auto-plan.test.mjs` 覆盖：文本抽取、短文本不触发、`minChars` 配置读取、liveState 实时开关、去重、状态优先级、旧格式兼容、原子写入与不可写目录降级。
 
 `webserver-lifecycle.test.mjs` 覆盖：无 `webServer` 时四个工具仍注册、服务晚发布、GET/HEAD/POST、同源校验、请求体上限、服务替换、重复发布与插件卸载。全部在隔离的临时 `DSH_HOME` 中运行。
+
+`trust-contract.test.mjs` 覆盖：`planId` 方案复用、目录快照、成本护栏、逐步预算、跨轮自动研判和 `dryRun`。
 
 ---
 
@@ -248,6 +254,16 @@ node test/webserver-lifecycle.test.mjs
 ---
 
 ## 版本变更
+
+### 0.4.2
+
+**让「确认的方案就是执行的方案」成为硬契约。** `plan` 现在返回 `planId`，`run` 传入后复用同一份子任务、模型目录与成本护栏，不再重新分解；任务、护栏或方案签名不一致时明确拒绝。预算检查推进到分解、子任务、汇总的每次调用前，`freeOnly` 与 `maxMultiplier` 会拦截收费模型。
+
+- 自动研判改为只分析当前轮用户消息，并支持 `dryRun`；上一轮注入的提示不再让后续任务永久失效。
+- 分解结果增加任务类型、数量、空指令与依赖引用校验。
+- 状态接口新增 `/dsh-cost-router/state/diagnostics` 脱敏诊断；`cost_router_report` 支持 `scope` 与 `detail`。
+- 新增 `ROADMAP.md`、`CHANGELOG.md`、`CONTRIBUTING.md`、`SECURITY.md`、CI 和 issue 模板。
+- 版本号 `0.4.1` → `0.4.2`。
 
 ### 0.4.1
 
@@ -288,7 +304,7 @@ node test/webserver-lifecycle.test.mjs
 ```sh
 git init
 git add .
-git commit -m "dsh-cost-router 0.4.1"
+git commit -m "dsh-cost-router 0.4.2"
 git branch -M main
 git remote add origin https://github.com/jy02815803/dsh-cost-router.git
 git push -u origin main

@@ -25,14 +25,19 @@ jobs:
           node --check lib/host.js
           node --check lib/state.js
           node --check lib/client.js
+          node --check lib/orchestrator.js
+          node --check lib/plan-store.js
+          node --check lib/runtime.js
           node --check test/smoke.test.mjs
           node --check test/auto-plan.test.mjs
           node --check test/webserver-lifecycle.test.mjs
+          node --check test/trust-contract.test.mjs
       - name: Unit tests
         run: |
           node test/smoke.test.mjs
           node test/auto-plan.test.mjs
           node test/webserver-lifecycle.test.mjs
+          node test/trust-contract.test.mjs
       - name: Package check
         run: npm pack --dry-run
       - name: Diff hygiene

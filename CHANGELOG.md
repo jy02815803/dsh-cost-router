@@ -6,10 +6,24 @@
 
 ### Planned
 
-- 0.4.2：方案一致性、逐步预算、跨轮自动研判、状态自检。
 - 0.5.0：决策卡片、成本偏差、隐私审计与高级护栏。
 - 0.6.0：质量、兼容矩阵、多语言规则与自动化评测。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
+
+## [0.4.2] - 2026-11-04
+
+### Added
+
+- `plan` 返回 `planId` 与完整目录快照；`run` 可复用已确认方案，不再重复分解。
+- `run` 支持 `freeOnly` 与 `maxMultiplier`，每次模型调用前执行成本护栏检查。
+- 自动研判支持当前轮消息判定与 `dryRun`，历史提示不再让后续任务永久失效。
+- `/dsh-cost-router/state/diagnostics` 提供脱敏运行状态；`report` 支持 `scope` 与 `detail`。
+- `0.4.2` 可信契约回归测试、CI 语法与测试矩阵。
+
+### Fixed
+
+- 用户确认的方案与执行方案不一致、预算只在阶段入口检查、跨轮自动研判去重错误。
+- 分解结果增加类型、数量、空指令与依赖引用校验。
 
 ## [0.4.1] - 2026-11-04
 
@@ -34,6 +48,7 @@
 
 - 补齐 `settings.plugins.tab` 所需的客户端依赖；修复 `minChars`、中止、跨 run 预算隔离与 `longdoc` 评分。
 
-[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2
 [0.4.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.1
 [0.4.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.0
