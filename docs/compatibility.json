@@ -17,16 +17,18 @@
       "status": "verified"
     },
     {
-      "verifiedAt": null,
+      "verifiedAt": "2026-11-05",
       "pluginVersion": "0.6.0",
       "evidence": [
-        "npm test 与 GitHub Actions Node 20/22/24 矩阵通过",
-        "发布前需在本机 DSH 重启后复核诊断接口与设置页"
+        "Harness 正常重启并输出 Harness is ready",
+        "/dsh-cost-router/state?diagnostics=1 返回 version=0.6.0、4 个工具、auditEnabled 与四项 guardrails",
+        "设置 → 内置插件 → 成本路由 显示版本 0.6.0 与三张卡片",
+        "audit.jsonl 开→写→关→停写→删除 闭环通过"
       ],
       "os": "Windows 11",
       "dshVersion": "0.2.1-rc.3",
       "node": "24.21.0",
-      "status": "pending-real-machine"
+      "status": "verified"
     },
     {
       "verifiedAt": null,

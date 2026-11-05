@@ -29,7 +29,7 @@
 - 中英文规则分离：`lib/rules.js` 分别维护能力词、强模型措辞与动作词，`router.js` 按文本特征选规则集。✅ 英文任务不再依赖中文关键词。
 - 离线评测集：`config/auto-plan-eval.json` 16 条中英样本（短句、否定、指定模型、图片、长文、紧急任务、代码排查），`scripts/evaluate-auto-plan.mjs` 统计触发率、拆分准确率、能力识别准确率与误/漏触发。✅ 三项准确率均为 100%，`npm test` 会在规则回退时失败。
 - `npm test` 与 `scripts/run-tests.mjs` 串起语法检查、6 个离线测试和评测集；CI 在 Node 24 上再跑一次。✅ 全绿。
-- 发布 DSH 版本兼容矩阵：`docs/COMPATIBILITY.md` 与机器可读的 `docs/compatibility.json`，明确区分 `verified`、`pending-real-machine` 与 `expected`，不把未实测版本标成已验证。✅
+- 发布 DSH 版本兼容矩阵：`docs/COMPATIBILITY.md` 与机器可读的 `docs/compatibility.json`，明确区分 `verified`、`pending-real-machine` 与 `expected`，不把未实测版本标成已验证。✅ `0.2.1-rc.3 / Windows 11 / 0.6.0` 已完成重启、诊断接口、设置页、工具注册与审计闭环实机验收。
 - 完成标准：评测集与兼容矩阵可复现；不使用真实模型账号即可跑完 CI；失败不静默降级。✅
 
 遗留到 1.0.0：provider 级并发、超时、限流退避、失败升级与按 `contextWindow` 分层汇总；脱敏目录 fixtures 与页面冒烟；更多 DSH 版本的实机兼容记录；估算偏差的跨会话量化汇总。
