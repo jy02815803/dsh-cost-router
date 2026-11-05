@@ -6,12 +6,13 @@
 
 ### Planned
 
-- 0.6.0：质量、兼容矩阵、多语言规则与自动化评测。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
+- provider 级并发、超时、限流退避、失败升级与按 `contextWindow` 分层汇总。
+- 更多 DSH 版本的实机兼容记录、脱敏目录 fixtures 与页面冒烟。
 
 ### Added
 
-- `npm test` 一键运行：新增 `scripts/run-tests.mjs`，自动检查 `lib/`、`test/`、`scripts/` 下所有 JS/MJS 语法并逐个执行 5 个离线测试；`package.json.files` 纳入 `scripts/`。
+- `npm test` 一键运行：新增 `scripts/run-tests.mjs`，自动检查 `lib/`、`test/`、`scripts/` 下所有 JS/MJS 语法、逐个执行离线测试并运行离线评测集；`package.json.files` 纳入 `scripts/` 与 `docs/`。
 - README 顶部加 CI / Release 徽章。
 
 ### Fixed
@@ -22,6 +23,26 @@
 - CI 改为 Node 20 / 22 / 24 兼容矩阵：运行时语法在三个版本全量验证；`auto-plan.test.mjs`、`trust-contract.test.mjs`、`webserver-lifecycle.test.mjs` 使用 Node 22.15+ 才有的 `registerHooks()`，因此 Node 20 只运行不依赖该 API 的两个测试，Node 22 / 24 运行全部 5 个测试。`package.json` 的 `engines` 保持 `>=18.0.0`，测试版本要求写入 `README.md`、`CONTRIBUTING.md` 与新增的 `test/README.md`。
 - CI 配置与测试说明不进入 npm 包，因此不影响 `0.5.0` 的产物与已发布的 Release。
 - `lib/client.js` 文件头注释仍描述 0.4.x 的开关接口，漏掉 `auditEnabled`、`clearAudit` 与 `?diagnostics=1` 诊断字段；实机加载的脚本功能本身已是 0.5.0，但公开项目里的注释会误导贡献者，现补齐完整接口约定。仅注释修改，不改变运行时行为。
+
+## [0.6.0] - 2026-11-05
+
+### Added
+
+- `config/auto-plan-eval.json`：16 条中英文离线评测样本，覆盖短句、否定、指定模型、图片、长文、紧急任务与代码排查；`scripts/evaluate-auto-plan.mjs` 输出触发判定、拆分建议、能力识别准确率，以及拆分误触发 / 漏触发。当前三项准确率均为 100%。
+- `lib/rules.js`：中文与英文能力词、强模型措辞、动作词分离维护；`router.js` 按文本特征选规则集，英文任务不再依赖中文关键词。
+- `validateSubtasks()` 导出，补齐重复 id、空指令、非法 `kind`、任务数量、悬空依赖与依赖环校验；新增 `test/quality-compat.test.mjs` 做离线回归。
+- `docs/COMPATIBILITY.md` 与 `docs/compatibility.json`：机器可读的 DSH 兼容矩阵，明确区分 `verified`、`pending-real-machine` 与 `expected`，不把未实测版本写成已验证。
+- `npm test` 串起 21 个语法检查、6 个离线测试和 1 个离线评测集；CI 在 Node 24 上额外跑评测集和 `npm test`。
+
+### Changed
+
+- README 当前版本、下载链接与测试说明更新到 `0.6.0`；测试版本断言从 `0.5.0` 升到 `0.6.0`。
+- `ROADMAP.md` 的 0.6.0 项按实际完成度逐条标记；provider 并发/限流退避、脱敏目录 fixtures 与页面冒烟留到 1.0.0。
+- `package.json` 版本 `0.5.0` → `0.6.0`。
+
+### Fixed
+
+- `clearAudit` 失败时不再产生状态副作用（见 `3ee0a09` 的维护提交）；README 不再推荐可能破坏 `node_modules` 的 Windows 绝对路径 `file:` 安装命令。
 
 ## [0.5.0] - 2026-11-05
 
@@ -97,7 +118,8 @@
 
 - 补齐 `settings.plugins.tab` 所需的客户端依赖；修复 `minChars`、中止、跨 run 预算隔离与 `longdoc` 评分。
 
-[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.6.0
 [0.5.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.5.0
 [0.4.2.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2.1
 [0.4.2]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2

@@ -1,0 +1,186 @@
+{
+  "cases": [
+    {
+      "expectTrigger": false,
+      "minChars": 12,
+      "id": "zh-short-ok",
+      "expectDecompose": false,
+      "text": "好的",
+      "language": "zh",
+      "expectKinds": []
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-simple-notice",
+      "expectDecompose": false,
+      "text": "帮我起草一份正式的放假通知",
+      "language": "zh",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-negation",
+      "expectDecompose": false,
+      "text": "不要拆这个简短的会议纪要，直接整理成三条要点",
+      "language": "zh",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-pinned-model",
+      "expectDecompose": false,
+      "text": "指定用 workbuddy/Hy3，把这段会议纪要压缩成三条要点",
+      "language": "zh",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-vision-writing",
+      "expectDecompose": true,
+      "text": "看这五张扫描件截图，提取表格数据，再写一份分析报告",
+      "language": "zh",
+      "expectKinds": [
+        "vision",
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-longdoc-analysis",
+      "expectDecompose": true,
+      "text": "通读全文，提取数据，交叉分析，然后写成结论",
+      "language": "zh",
+      "expectKinds": [
+        "longdoc",
+        "reasoning",
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-urgent",
+      "expectDecompose": false,
+      "text": "紧急，马上把这份通知润色成正式上报稿，务必准确",
+      "language": "zh",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "zh-code-review",
+      "expectDecompose": false,
+      "text": "看一下这个 Python 报错，排查原因并给出修复建议",
+      "language": "zh",
+      "expectKinds": [
+        "code",
+        "reasoning"
+      ]
+    },
+    {
+      "expectTrigger": false,
+      "minChars": 12,
+      "id": "en-short-ok",
+      "expectDecompose": false,
+      "text": "OK",
+      "language": "en",
+      "expectKinds": []
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-simple-summary",
+      "expectDecompose": false,
+      "text": "Write a short meeting summary with three bullet points",
+      "language": "en",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-negation",
+      "expectDecompose": false,
+      "text": "Do not split this short memo, just summarize it in three lines",
+      "language": "en",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-pinned-model",
+      "expectDecompose": false,
+      "text": "Use workbuddy/Hy3 to draft the release notes for this update",
+      "language": "en",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-vision-report",
+      "expectDecompose": true,
+      "text": "Read this chart image, extract the table, compare the rows, and write a report",
+      "language": "en",
+      "expectKinds": [
+        "vision",
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-longdoc-analysis",
+      "expectDecompose": true,
+      "text": "Read the entire document, extract data, analyze why it changed, and write conclusions",
+      "language": "en",
+      "expectKinds": [
+        "longdoc",
+        "reasoning",
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-urgent",
+      "expectDecompose": false,
+      "text": "Urgent: polish this notice into a board-ready final version; it must be exact",
+      "language": "en",
+      "expectKinds": [
+        "writing"
+      ]
+    },
+    {
+      "expectTrigger": true,
+      "minChars": 12,
+      "id": "en-code-review",
+      "expectDecompose": true,
+      "text": "Debug this Python stack trace, diagnose the root cause, and propose a fix",
+      "language": "en",
+      "expectKinds": [
+        "code",
+        "reasoning"
+      ]
+    }
+  ],
+  "schemaVersion": 1,
+  "description": "离线自动研判评测集。预期值是「是否提示先研判」和「规则预判是否建议拆分」；不调用模型、不访问网络。"
+}

@@ -11,7 +11,7 @@ npm test
 npm pack --dry-run
 ```
 
-`npm test` 由 `scripts/run-tests.mjs` 执行：先检查 `lib/`、`test/`、`scripts/` 下所有 JS/MJS 的语法，再逐个运行 `test/*.test.mjs`。CI 在 Node 20 上会跳过依赖 `registerHooks()` 的测试，Node 22/24 运行全量。
+`npm test` 由 `scripts/run-tests.mjs` 执行：先检查 `lib/`、`test/`、`scripts/` 下所有 JS/MJS 的语法，再逐个运行 `test/*.test.mjs`，最后运行 `scripts/evaluate-auto-plan.mjs`。CI 在 Node 20 上会跳过依赖 `registerHooks()` 的测试，Node 22/24 运行全量测试，Node 24 额外跑 `npm test`。
 
 测试必须使用临时 `DSH_HOME`，不得改写用户真实状态文件；不要调用真实 `cost_router_run`，也不要提交 API key、token、模型目录中的密钥或任务正文。
 

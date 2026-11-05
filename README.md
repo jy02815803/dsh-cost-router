@@ -6,7 +6,7 @@
 
 **核心主张：省钱靠的不是"选对模型"，而是"上下文隔离" + "能力匹配"。**
 
-当前版本 **0.5.0**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。
+当前版本 **0.6.0**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。兼容状态见 [DSH 版本兼容矩阵](docs/COMPATIBILITY.md)。
 
 ---
 
@@ -253,10 +253,10 @@ dsh-cost-router/
 
 ### 唯一推荐：安装 Release 的 `.tgz` 包
 
-打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.5.0](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.5.0)，直接下载地址：
+打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.6.0](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.6.0)，直接下载地址：
 
 ```text
-https://github.com/jy02815803/dsh-cost-router/releases/download/v0.5.0/dsh-cost-router-0.5.0.tgz
+https://github.com/jy02815803/dsh-cost-router/releases/download/v0.6.0/dsh-cost-router-0.6.0.tgz
 ```
 
 在 DSH Desktop 的「插件」页选择「本地包 / `.tgz`」安装这个文件。**安装完成后必须正常重启 Harness**；客户端依赖图只在启动时组装，只刷新页面不生效。已有版本直接覆盖安装，开关状态会保留。
@@ -289,15 +289,21 @@ dsh plugin --profile web add github:jy02815803/dsh-cost-router
 
 ## 测试
 
-插件运行时支持 Node 20 / 22 / 24（见 `package.json` 的 `engines`），GitHub Actions 会在这三个版本上分别验证。本地跑全量测试需要 Node >= 22.15：`auto-plan.test.mjs`、`trust-contract.test.mjs`、`webserver-lifecycle.test.mjs` 使用 `node:module` 的 `registerHooks()` 注入 DSH 模块桩，这个 API 在 Node 20 上不存在。`smoke.test.mjs` 与 `explain-audit.test.mjs` 不依赖该 API，可在 Node 20 上单独运行。详见 `test/README.md`。
+插件运行时支持 Node 20 / 22 / 24（见 `package.json` 的 `engines`），GitHub Actions 会在这三个版本上分别验证。本地跑全量测试需要 Node >= 22.15：`auto-plan.test.mjs`、`trust-contract.test.mjs`、`webserver-lifecycle.test.mjs` 使用 `node:module` 的 `registerHooks()` 注入 DSH 模块桩，这个 API 在 Node 20 上不存在。`smoke.test.mjs`、`explain-audit.test.mjs` 与 `quality-compat.test.mjs` 不依赖该 API，可在 Node 20 上单独运行。详见 `test/README.md`。
+
+一键运行语法检查、全部回归测试和离线评测集：
 
 ```sh
-node test/smoke.test.mjs
-node test/auto-plan.test.mjs
-node test/webserver-lifecycle.test.mjs
-node test/trust-contract.test.mjs
-node test/explain-audit.test.mjs
+npm test
 ```
+
+只跑评测集并输出逐条 JSON 结果：
+
+```sh
+node scripts/evaluate-auto-plan.mjs --json
+```
+
+评测集在 `config/auto-plan-eval.json`，覆盖中英文短句、否定、指定模型、图片、长文、紧急任务与代码排查；当前 16 条样本的触发判定、拆分建议和能力识别准确率均为 100%，规则回退会让 `npm test` 失败。
 
 `smoke.test.mjs` 覆盖：任务分类、异构判定、成本口径（含"负倍率不能当免费"）、settings 目录抽取、路由策略（免费优先 / 视觉门槛 / 强制强模型 / 显式 pin）、端到端编排、失败隔离、多模态通道（图片只进视觉子任务）、预算熔断、分解结果非法 JSON、中止向上抛、`longdoc` 能力评分、多次 run 预算隔离、客户端 inject 清单。
 
@@ -308,6 +314,8 @@ node test/explain-audit.test.mjs
 `trust-contract.test.mjs` 覆盖：`planId` 方案复用、目录快照、成本护栏、逐步预算、跨轮自动研判和 `dryRun`。
 
 `explain-audit.test.mjs` 覆盖：决策卡片的置信度与原因、警告文案、估实偏差的各档质量、价格来源归类，以及审计的默认关闭、实时开关、白名单字段（正文与凭据不得入库）、`clear()` 删除与文件缺席时的幂等。
+
+`quality-compat.test.mjs` 覆盖：中英文规则分离、强模型措辞、分解结果重复 id / 空指令 / 未知 kind / 悬空依赖 / 依赖环，以及兼容矩阵与评测集的机器可读结构。
 
 `webserver-lifecycle.test.mjs` 还断言 `?diagnostics=1` 里 `auditEnabled` 与 `guardrails` 四个护栏字段存在且有明确默认值，并且 `auditEnabled` 传非布尔值返回 400、`clearAudit` 失败返回 500。
 

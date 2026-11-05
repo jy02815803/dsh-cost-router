@@ -304,7 +304,7 @@ try {
   const diagRes = await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state?diagnostics=1' })
   assert.equal(diagRes.status, 200)
   const diagnostics = parseJson(diagRes)
-  assert.equal(diagnostics.version, '0.5.0')
+  assert.equal(diagnostics.version, '0.6.0')
   assert.equal(diagnostics.stateRoute, '/dsh-cost-router/state')
   assert.equal(diagnostics.webServer, true)
   assert.deepEqual(diagnostics.tools, [

@@ -28,5 +28,6 @@ const tests = readdirSync(path.join(root, 'test'))
   .filter((name) => name.endsWith('.test.mjs'))
   .sort()
 for (const name of tests) run(name, [`test/${name}`])
+run('离线评测集', ['scripts/evaluate-auto-plan.mjs'])
 
-console.log(`全部通过：${syntax.length} 个语法检查，${tests.length} 个离线测试`)
+console.log(`全部通过：${syntax.length} 个语法检查，${tests.length} 个离线测试，1 个离线评测集`)

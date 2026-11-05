@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "note": "状态 verified 表示在真实 DSH Desktop 上完成重启、诊断接口、设置页开关、工具注册与审计写盘/停写验收；expected 表示依据 peerDependencies 推断，尚未实机验证。",
+  "entries": [
+    {
+      "verifiedAt": "2026-11-05",
+      "pluginVersion": "0.5.0",
+      "evidence": [
+        "Harness is ready",
+        "/dsh-cost-router/state?diagnostics=1 返回 version=0.5.0 与四项 guardrails",
+        "设置 → 内置插件 → 成本路由 三张卡片可见",
+        "audit.jsonl 开→写→关→停写→删除 闭环通过"
+      ],
+      "os": "Windows 11",
+      "dshVersion": "0.2.1-rc.3",
+      "node": "24.21.0",
+      "status": "verified"
+    },
+    {
+      "verifiedAt": null,
+      "pluginVersion": "0.6.0",
+      "evidence": [
+        "npm test 与 GitHub Actions Node 20/22/24 矩阵通过",
+        "发布前需在本机 DSH 重启后复核诊断接口与设置页"
+      ],
+      "os": "Windows 11",
+      "dshVersion": "0.2.1-rc.3",
+      "node": "24.21.0",
+      "status": "pending-real-machine"
+    },
+    {
+      "verifiedAt": null,
+      "pluginVersion": ">=0.5.0",
+      "evidence": [
+        "peerDependencies 声明兼容；没有脱敏目录 fixtures 与实机日志"
+      ],
+      "os": "未验证",
+      "dshVersion": "0.2.0-rc.1",
+      "node": "20/22/24",
+      "status": "expected"
+    },
+    {
+      "verifiedAt": null,
+      "pluginVersion": ">=0.5.0",
+      "evidence": [
+        "peerDependencies 声明兼容；settings.describe 与 slots 行为可能不同"
+      ],
+      "os": "未验证",
+      "dshVersion": "0.1.7-rc.2",
+      "node": "20/22/24",
+      "status": "expected"
+    }
+  ]
+}
