@@ -9,8 +9,15 @@
 - 0.6.0：质量、兼容矩阵、多语言规则与自动化评测。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
 
+### Added
+
+- `npm test` 一键运行：新增 `scripts/run-tests.mjs`，自动检查 `lib/`、`test/`、`scripts/` 下所有 JS/MJS 语法并逐个执行 5 个离线测试；`package.json.files` 纳入 `scripts/`。
+- README 顶部加 CI / Release 徽章。
+
 ### Fixed
 
+- README 安装段把 Release `.tgz` 写成唯一推荐；删除 `file:D:/DSharness/dsh-cost-router` 绝对目录命令，补上「Windows 绝对路径可能让 pnpm 拼错并清残 `node_modules`」的风险说明，把 `github:` 与源码目录安装降级为高级用法。
+- `POST /dsh-cost-router/state` 带 `clearAudit: true` 时，此前先改 `liveState` 并写 `state.json` 才尝试删除审计文件；删除失败返回 500 后，用户只点了「删除审计记录」，两个开关却已被请求里的值改写。现改为先清空文件，成功才写状态，失败时完全无状态副作用；补 HTTP 级失败回归断言（实时快照与磁盘状态均不变）。
 - CI 自 `0.4.2` 起从未真正跑过：`actions/setup-node` 的 `cache: npm` 要求仓库存在 lockfile，而本插件只有 `peerDependencies`、不提供 `package-lock.json`，导致 workflow 在依赖准备阶段就以「Dependencies lock file is not found」失败，后续的语法检查与单元测试根本没执行。现移除 npm 缓存（测试通过桩模块运行，无需 `npm install`），语法检查补齐 `lib/auto-plan.js`、`lib/catalog.js`、`lib/llm.js`、`lib/router.js`，并增加 `workflow_dispatch` 以便手动触发验证。
 - CI 改为 Node 20 / 22 / 24 兼容矩阵：运行时语法在三个版本全量验证；`auto-plan.test.mjs`、`trust-contract.test.mjs`、`webserver-lifecycle.test.mjs` 使用 Node 22.15+ 才有的 `registerHooks()`，因此 Node 20 只运行不依赖该 API 的两个测试，Node 22 / 24 运行全部 5 个测试。`package.json` 的 `engines` 保持 `>=18.0.0`，测试版本要求写入 `README.md`、`CONTRIBUTING.md` 与新增的 `test/README.md`。
 - CI 配置与测试说明不进入 npm 包，因此不影响 `0.5.0` 的产物与已发布的 Release。
@@ -18,7 +25,7 @@
 
 ## [0.5.0] - 2026-11-05
 
-> 维护说明：2026-11-05 发布后修复了此前一直未真正执行的 CI，并补充 Node 20/22/24 兼容矩阵与测试版本说明。相关改动都在 CI 配置和文档里，不进入 npm 包，所以插件版本保持 `0.5.0`；`main` 打包出的 tgz 内容会与 Release 附件略有差异（仅文档与 package 的体积），功能代码完全一致。详见下方 `[Unreleased]`。
+> 维护说明：2026-11-05 发布后修复了此前一直未真正执行的 CI，并补充 Node 20/22/24 兼容矩阵、测试版本说明、`npm test` 与安装指引；后续还修了 `clearAudit` 失败时的状态副作用。功能代码在 `v0.5.0` 标签处已定稿，维护提交不升版本号；打包出的 tgz 内容会随维护文档变化，Release 附件已同步为当时 `main` 的产物。详见 `[Unreleased]`。
 
 ### Added
 

@@ -14,7 +14,7 @@
 
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs'
 import { registerHooks } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
@@ -419,6 +419,38 @@ try {
   })
   assert.equal(clearRes.status, 200)
   assert.equal(parseJson(clearRes).auditCleared, true)
+
+  // 删除失败必须是一次「无副作用」的失败：只返回 500，不改开关、不写状态文件。
+  // 这里把审计文件替换成一个「路径指向目录」的占位：rmSync 删除目录会失败，
+  // 且 existsSync 仍为 true；此前实现先写 liveState 再 clear()，于是「删除审计」
+  // 按钮失败时会顺带把自动研判/审计开关改掉。
+  const statePath = path.join(sandbox, 'dsh-cost-router', 'state.json')
+  const auditPath = path.join(sandbox, 'dsh-cost-router', 'audit.jsonl')
+  const stateBeforeFailedClear = readFileSync(statePath, 'utf8')
+  const diagBeforeFailedClear = parseJson(await request(routes[0], { method: 'GET' }))
+  mkdirSync(auditPath, { recursive: true })
+  let failedClear
+  try {
+    failedClear = await request(routes[0], {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ enabled: true, minChars: 33, auditEnabled: true, clearAudit: true }),
+    })
+  } finally {
+    rmdirSync(auditPath)
+  }
+  assert.equal(failedClear.status, 500, '删除失败应返回 500')
+  assert.deepEqual(parseJson(failedClear), { error: 'audit-clear-failed' })
+  assert.deepEqual(
+    parseJson(await request(routes[0], { method: 'GET' })),
+    diagBeforeFailedClear,
+    '删除失败后实时开关快照必须完全不变',
+  )
+  assert.equal(
+    readFileSync(statePath, 'utf8'),
+    stateBeforeFailedClear,
+    '删除失败后不得改写状态文件',
+  )
 
   // 同一服务没有重新发布时不能再次注册，避免重复路由。
   const beforeRepeat = host.publishCount

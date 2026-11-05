@@ -7,10 +7,11 @@
 全量检查需要 Node >= 22.15：部分测试使用 `registerHooks()` 注入 DSH 模块桩。插件运行时本身由 CI 在 Node 20 / 22 / 24 上分别做语法验证。详见 `test/README.md`。
 
 ```sh
-for f in lib/*.js test/*.test.mjs; do node --check "$f"; done
-for f in test/*.test.mjs; do node "$f"; done
+npm test
 npm pack --dry-run
 ```
+
+`npm test` 由 `scripts/run-tests.mjs` 执行：先检查 `lib/`、`test/`、`scripts/` 下所有 JS/MJS 的语法，再逐个运行 `test/*.test.mjs`。CI 在 Node 20 上会跳过依赖 `registerHooks()` 的测试，Node 22/24 运行全量。
 
 测试必须使用临时 `DSH_HOME`，不得改写用户真实状态文件；不要调用真实 `cost_router_run`，也不要提交 API key、token、模型目录中的密钥或任务正文。
 

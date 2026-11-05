@@ -1,5 +1,7 @@
 # dsh-cost-router：任务分解 + 多模型分派
 
+[![CI](https://github.com/jy02815803/dsh-cost-router/actions/workflows/ci.yml/badge.svg)](https://github.com/jy02815803/dsh-cost-router/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/jy02815803/dsh-cost-router)](https://github.com/jy02815803/dsh-cost-router/releases)
+
 用便宜/免费的模型做调度，把复杂任务拆开，看图、读长文、深度推理、写稿分别交给最合适的模型，最后统一汇总。
 
 **核心主张：省钱靠的不是"选对模型"，而是"上下文隔离" + "能力匹配"。**
@@ -249,7 +251,7 @@ dsh-cost-router/
 
 ## 安装
 
-### 推荐给测试者：下载 Release 包
+### 唯一推荐：安装 Release 的 `.tgz` 包
 
 打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.5.0](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.5.0)，直接下载地址：
 
@@ -257,21 +259,19 @@ dsh-cost-router/
 https://github.com/jy02815803/dsh-cost-router/releases/download/v0.5.0/dsh-cost-router-0.5.0.tgz
 ```
 
-在 DSH Desktop 的「插件」页选择本地包/本地目录安装，或把包解压后通过 profile 的 `file:` 依赖安装。**安装完成后必须正常重启 Harness**；客户端依赖图只在启动时组装，只刷新页面不生效。开源协作也可 fork、提 Issue 或 Pull Request。
+在 DSH Desktop 的「插件」页选择「本地包 / `.tgz`」安装这个文件。**安装完成后必须正常重启 Harness**；客户端依赖图只在启动时组装，只刷新页面不生效。已有版本直接覆盖安装，开关状态会保留。
 
-### 方式一：从 GitHub 安装
+> 不要照抄网上常见的 `file:D:/...` 绝对目录依赖命令。实测在某些 DSH / pnpm 组合里，Windows 绝对路径会被拼成 `profile/web\D:\...`，找不到路径时还可能把 `node_modules` 清残。若必须从源码安装，请先把 `npm pack` 得到的 `.tgz` 放进 profile 的 `vendor/`，再用**相对** `file:` 路径；这一步只建议熟悉 DSH profile 结构的维护者操作。
+
+### 高级用法（不是推荐安装方式）
+
+维护者可以使用 DSH CLI，但请先确认你所用 DSH 版本对该协议的支持情况：
 
 ```sh
 dsh plugin --profile web add github:jy02815803/dsh-cost-router
 ```
 
-### 方式二：从本地目录安装
-
-```sh
-dsh plugin --profile web add file:D:/DSharness/dsh-cost-router
-```
-
-或在 DSH Desktop 的「插件」页选择本地目录安装。
+源码目录安装、相对 `file:` 依赖和手动修改 `pnpm-lock.yaml` 属于开发流程；普通用户请始终使用 Release `.tgz`。不要把本机绝对路径写进公开文档或配置示例。
 
 ### 装完确认
 
