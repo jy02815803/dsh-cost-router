@@ -272,7 +272,7 @@ try {
   assert.equal(getRes.status, 200)
   assert.match(getRes.headers['content-type'], /application\/json/)
   assert.equal(getRes.headers['cache-control'], 'no-store')
-  assert.deepEqual(parseJson(getRes), { enabled: true, minChars: 12, persisted: false })
+  assert.deepEqual(parseJson(getRes), { enabled: true, minChars: 12, auditEnabled: false, persisted: false })
 
   // HEAD 与 GET 同状态、同头部，但不能返回响应体。
   const headRes = await request(routes[0], { method: 'HEAD' })
@@ -287,24 +287,24 @@ try {
     body: JSON.stringify({ enabled: false, minChars: 20 }),
   })
   assert.equal(postRes.status, 200)
-  assert.deepEqual(parseJson(postRes), { enabled: false, minChars: 20, persisted: true })
+  assert.deepEqual(parseJson(postRes), { enabled: false, minChars: 20, auditEnabled: false, persisted: true })
 
   const stateFile = path.join(sandbox, 'dsh-cost-router', 'state.json')
   assert.deepEqual(
     JSON.parse(readFileSync(stateFile, 'utf8')),
-    { autoPlanEnabled: false, autoPlanMinChars: 20 },
+    { autoPlanEnabled: false, autoPlanMinChars: 20, auditEnabled: false },
     'POST 后状态文件应立即更新为新格式',
   )
 
   // 再读一次应反映刚才持久化的值。
   const getAfterPost = await request(routes[0], { method: 'GET' })
-  assert.deepEqual(parseJson(getAfterPost), { enabled: false, minChars: 20, persisted: true })
+  assert.deepEqual(parseJson(getAfterPost), { enabled: false, minChars: 20, auditEnabled: false, persisted: true })
 
   // 诊断接口只暴露脱敏排障字段，不返回任务正文、token 或凭据。
   const diagRes = await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state?diagnostics=1' })
   assert.equal(diagRes.status, 200)
   const diagnostics = parseJson(diagRes)
-  assert.equal(diagnostics.version, '0.4.2.1')
+  assert.equal(diagnostics.version, '0.5.0')
   assert.equal(diagnostics.stateRoute, '/dsh-cost-router/state')
   assert.equal(diagnostics.webServer, true)
   assert.deepEqual(diagnostics.tools, [
@@ -312,6 +312,14 @@ try {
   ])
   assert.equal(diagnostics.autoPlan.enabled, false)
   assert.ok(Array.isArray(diagnostics.tools))
+  // 护栏必须在诊断里可见：配置没给时也要有明确默认值，不能是 undefined，
+  // 否则用户无法区分「没启用观察模式」和「这个字段根本没接线」。
+  assert.deepEqual(diagnostics.guardrails, {
+    dryRun: false,
+    freeOnly: false,
+    maxMultiplier: 10,
+    defaultBudget: null,
+  })
   assert.equal(JSON.stringify(diagnostics).includes('token'), false, '诊断信息不能含 token 字样')
   assert.equal(JSON.stringify(diagnostics).includes('task'), false, '诊断信息不能含任务正文')
 
@@ -345,7 +353,7 @@ try {
   assert.deepEqual(parseJson(largeBodyRes), { error: 'request-body-too-large' })
   assert.deepEqual(
     JSON.parse(readFileSync(stateFile, 'utf8')),
-    { autoPlanEnabled: false, autoPlanMinChars: 20 },
+    { autoPlanEnabled: false, autoPlanMinChars: 20, auditEnabled: false },
     '被拒绝的超大请求不能改状态',
   )
 
@@ -359,7 +367,58 @@ try {
   assert.notEqual(routes[0], stateRoute, '新服务应持有新注册的路由对象')
   const replacementGet = await request(routes[0], { method: 'GET' })
   assert.equal(replacementGet.status, 200)
-  assert.deepEqual(parseJson(replacementGet), { enabled: false, minChars: 20, persisted: true })
+  assert.deepEqual(parseJson(replacementGet), { enabled: false, minChars: 20, auditEnabled: false, persisted: true })
+
+  // ── 审计开关必须是真开关 ────────────────────────────────────────────────
+  // 0.4.x 出过「界面显示已开启、磁盘一个字节都没写」的假开关：开关值在构造时
+  // 被固化，实时状态改了也没用。这里从 HTTP 接口一路验到落盘与诊断，任何一环
+  // 断掉都会失败，而不是只测 PrivacyAudit 类内部。
+  const auditOnRes = await request(routes[0], {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ enabled: false, auditEnabled: true }),
+  })
+  assert.equal(auditOnRes.status, 200)
+  assert.equal(parseJson(auditOnRes).auditEnabled, true, 'POST 后应立刻回读为已开启')
+  assert.equal(
+    JSON.parse(readFileSync(stateFile, 'utf8')).auditEnabled,
+    true,
+    '审计开关必须落盘，重启后保持',
+  )
+  const diagAuditOn = parseJson(
+    await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state?diagnostics=1' }),
+  )
+  assert.equal(diagAuditOn.auditEnabled, true, '诊断接口必须反映实时审计开关')
+  assert.deepEqual(diagAuditOn.priceSources, { declared: 0, heuristic: 0, unknown: 0 })
+
+  // 非布尔审计开关要被拒绝，不能默默写成 truthy 字符串。
+  const badAudit = await request(routes[0], {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ enabled: false, auditEnabled: 'yes' }),
+  })
+  assert.equal(badAudit.status, 400)
+  assert.deepEqual(parseJson(badAudit), { error: 'auditEnabled must be a boolean' })
+
+  // 关闭开关必须同样实时生效，且不影响已落盘的其它字段。
+  const auditOffRes = await request(routes[0], {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ enabled: false, auditEnabled: false }),
+  })
+  assert.equal(parseJson(auditOffRes).auditEnabled, false)
+  const auditStateFile = JSON.parse(readFileSync(stateFile, 'utf8'))
+  assert.equal(auditStateFile.auditEnabled, false)
+  assert.equal(auditStateFile.autoPlanEnabled, false, '改审计开关不能顺带改自动研判')
+
+  // 删除审计记录：文件不存在时也必须返回成功，界面才不会出现假失败。
+  const clearRes = await request(routes[0], {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ enabled: false, clearAudit: true }),
+  })
+  assert.equal(clearRes.status, 200)
+  assert.equal(parseJson(clearRes).auditCleared, true)
 
   // 同一服务没有重新发布时不能再次注册，避免重复路由。
   const beforeRepeat = host.publishCount

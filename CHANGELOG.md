@@ -6,9 +6,35 @@
 
 ### Planned
 
-- 0.5.0：决策卡片、成本偏差、隐私审计与高级护栏。
 - 0.6.0：质量、兼容矩阵、多语言规则与自动化评测。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
+
+## [0.5.0] - 2026-11-05
+
+### Added
+
+- 决策卡片（`lib/explain.js`）：每次研判输出 `decision`、`confidence`、`reasons`、`warnings`，说明识别到几类能力、为什么拆或不拆、价格来自声明还是推断；输出只含元数据，不含任务正文与凭据。
+- 成本报告新增 `estimate`，给出估算、实耗、`delta`、`ratio` 与质量档 `exact`/`good`/`fair`/`poor`/`estimate-unavailable`。
+- 价格来源归类（`lib/pricing.js`）区分 `declared`（渠道声明倍率）、`heuristic`（按模型名推断免费）、`unknown`（默认口径），并在诊断接口与决策卡片中展示。
+- 本地隐私审计（`lib/audit.js`）：可选、默认关闭，只写 `audit.jsonl` 白名单九字段（`ts`/`stage`/`kinds`/`decision`/`model`/`estimated`/`actual`/`quality`/`accepted`），不联网、不上传，可一键删除；审计写入失败绝不影响主流程。
+- 配置新增 `auditEnabled`、`dryRun`、`defaultBudget`；`run` 未显式传 `budget` 时回落到 `defaultBudget`。
+- 设置页新增「本地隐私审计」开关与「删除审计记录」按钮，免重启生效；「运行状态」卡片展示四个护栏的实际生效值。
+- 新增 `test/explain-audit.test.mjs`，覆盖置信度、偏差分档、价格来源归类、审计默认关闭与白名单字段。
+
+### Fixed
+
+- **观察模式此前无法开启**：实现读 `config.dryRun`，但 `Config` schema 从未声明该字段，因此无论怎么配置都恒为 `false`。现已声明并完整接线到 `liveState` → `auto-plan` → 诊断 → 界面。
+- 界面「隐私审计」开关此前只改显示不落库：`PrivacyAudit.enabled` 改为实时读取 `liveState.auditEnabled`，开关点下去立刻决定写不写文件。
+- `run` 阶段不再对同一决策重复写两条审计记录（decision 与 outcome 各司其职）。
+- 诊断接口的 `priceSources` 此前因接线硬编码空目录而恒显示 `0/0/0`，改为惰性读取最近一次研判使用的模型目录。
+- 护栏字段缺失时界面回退到语义正确的 `guardrails.disabled` 文案，不再误用「自动研判已关闭」的提示。
+- 删除审计记录失败时使用独立的 `audit.clearFailed` 文案，不再复用自动研判的报错信息；切换审计前先清空上一次的提示，避免「已删除」长期遮蔽真实状态。
+
+### Changed
+
+- `webserver-lifecycle.test.mjs` 增加 HTTP 级审计回归：开启后回读与落盘、非布尔值返回 400、关闭不影响 `autoPlanEnabled`、`clearAudit` 成功与失败路径，以及 `guardrails` 四字段的默认值断言。
+- CI 的语法检查与单元测试矩阵纳入 `lib/audit.js`、`lib/explain.js`、`lib/pricing.js` 与 `test/explain-audit.test.mjs`。
+- 版本号 `0.4.2.1` → `0.5.0`。
 
 ## [0.4.2.1] - 2026-11-04
 
@@ -55,7 +81,8 @@
 
 - 补齐 `settings.plugins.tab` 所需的客户端依赖；修复 `minChars`、中止、跨 run 预算隔离与 `longdoc` 评分。
 
-[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.4.2.1...HEAD
+[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.5.0
 [0.4.2.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2.1
 [0.4.2]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2
 [0.4.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.1

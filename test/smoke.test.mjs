@@ -408,6 +408,6 @@ assert.ok(plainFail.failure !== null, '普通错误应记成 failure 而不是�
   assert.ok(inject.includes('@deepseek-ai/dsh-client-ui-slots'), 'inject 必须包含 ui-slots（slots.inject 的前提）')
   assert.ok(inject.includes('@deepseek-ai/dsh-client-locale'), 'inject 必须包含 locale（文案注册的前提）')
 
-  assert.equal(pkg.version, '0.4.2.1', '版本号应为 0.4.2.1')
+  assert.equal(pkg.version, '0.5.0', '版本号应为 0.5.0')
 }
 console.log('全部通过：分类、异构判定、成本口径、目录抽取、路由策略、端到端编排、失败隔离、多模态通道、预算熔断、longdoc 评分、中止上抛、跨 run 隔离、客户端依赖声明')

@@ -4,7 +4,7 @@
 
 **核心主张：省钱靠的不是"选对模型"，而是"上下文隔离" + "能力匹配"。**
 
-当前版本 **0.4.2.1**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。
+当前版本 **0.5.0**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。
 
 ---
 
@@ -43,10 +43,42 @@
 不想用界面时，`config/policy.json` 或 profile 里该插件的 `config` 也能设（改完要重启）：
 
 ```json
-{ "autoPlan": { "enabled": true, "minChars": 12 } }
+{
+  "autoPlan": { "enabled": true, "minChars": 12 },
+  "dryRun": false,
+  "freeOnly": false,
+  "maxMultiplier": 10,
+  "defaultBudget": 5,
+  "auditEnabled": false
+}
 ```
 
-`minChars` 是最短触发长度，默认 12 字，避免「好的」「继续」这类短句也触发研判。
+- `minChars`：最短触发长度，默认 12 字，避免「好的」「继续」这类短句也触发研判。
+- `dryRun`：观察模式。研判照常跑、结论照常记，但**不往消息里注入提示**，用来统计误判率。
+- `freeOnly`：只允许倍率为 0 的免费模型。
+- `maxMultiplier`：允许的最大成本倍率，默认 10。
+- `defaultBudget`：单次任务的默认相对成本上限。调用方没传 `budget` 时用它；不填表示不设上限。
+- `auditEnabled`：本地隐私审计，见下一节，默认关闭。
+
+这几个值当前生效是什么，设置页「运行状态」卡片和 `GET /dsh-cost-router/state?diagnostics=1` 的 `guardrails` 都会直接显示，不用猜。
+
+### 观察模式：先看清楚再动手
+
+自动研判是「强指令」，误判会让模型多绕一步。所以加了 `dryRun`：打开后插件只做判断和记录，不碰你的消息。用它跑上一两天，翻审计文件看看「本来会建议拆」的题到底靠不靠谱，再决定要不要正式开。
+
+### 本地隐私审计（默认关闭）
+
+设置页有个独立开关「本地隐私审计」，**默认关闭**，点一下立刻生效不用重启。
+
+打开后插件会在 `state.json` 旁边写一个 `audit.jsonl`，每次研判和每次执行各记一行，字段是固定白名单：
+
+```json
+{"ts":"2026-11-05T02:11:07.412Z","stage":"outcome","kinds":["vision","code"],"decision":"decompose","model":"workbuddy/Hy3","estimated":0.004,"actual":0.0031,"quality":"good","accepted":true}
+```
+
+刻意**不记**的东西：任务正文、模型输出、prompt、API key、token 用量以外的任何凭据。它不联网、不上传，文件永远只在你自己机器上。设置页有「删除审计记录」按钮，一键删干净（免重启）。
+
+它的用途是让你能自己验证插件准不准：`estimated` 对 `actual` 的偏差、哪类题被判成 `poor`，反过来调 `config/policy.json`。
 
 ---
 
@@ -149,6 +181,19 @@
 
 为什么不用美元：各渠道计价单位不统一（积分/额度/订阅），硬换算成美元只会给出假精度。相对成本能准确回答"这次比全用旗舰省了多少"。
 
+### 估算和实耗要放在一起看
+
+`cost_router_report` 除了逐次调用明细，还会返回一个 `estimate`：
+
+```json
+{ "estimated": 0.004, "actual": 0.0031, "delta": -0.0009, "ratio": 0.225, "quality": "fair",
+  "priceSources": { "declared": 6, "heuristic": 1, "unknown": 0 } }
+```
+
+`quality` 分五档：`exact`（两边都是 0）、`good`（偏差 ≤10%）、`fair`（≤30%）、`poor`（更大）、`estimate-unavailable`（当初没有可信估算）。最后一档是刻意留的——估算本来是 0 而实耗非 0 时，插件不会算出一个 `Infinity%` 骗你说它很准，而是直接承认「这次没法估」。
+
+偏差大不是 bug，是信息：它告诉你 `config/policy.json` 里的长度权重该调了。
+
 ---
 
 ## 调参
@@ -186,14 +231,18 @@ dsh-cost-router/
 │   ├── catalog.js        # 从 ctx.llm 读模型目录；从 settings 读成本倍率
 │   ├── router.js         # 分类、异构判定、能力匹配、成本估算
 │   ├── llm.js            # 统一的模型调用与 usage 采集
-│   └── orchestrator.js   # plan / run / report 三个动作
+│   ├── orchestrator.js   # plan / run / report / 决策解释 / 审计补记
+│   ├── explain.js        # 决策卡片：置信度、原因与警告（纯元数据）
+│   ├── pricing.js        # 价格来源归类与估实偏差口径
+│   ├── audit.js          # 可选本地隐私审计（默认关闭、白名单字段）
 │   ├── plan-store.js     # 已确认方案的进程内存储
 │   └── runtime.js        # 工具实例间共享的运行时状态
 └── test/
-    ├── smoke.test.mjs        # 主流程冒烟测试
-    ├── auto-plan.test.mjs    # 自动研判开关与状态持久化测试
-    └── webserver-lifecycle.test.mjs  # 开关接口启动竞态与生命周期测试
-    └── trust-contract.test.mjs       # 可信契约与自动研判回归测试
+    ├── smoke.test.mjs              # 主流程冒烟测试
+    ├── auto-plan.test.mjs          # 自动研判开关与状态持久化测试
+    ├── webserver-lifecycle.test.mjs # 开关接口启动竞态、生命周期与诊断字段
+    ├── trust-contract.test.mjs     # 可信契约与自动研判回归测试
+    └── explain-audit.test.mjs      # 决策卡片、估实偏差与隐私审计测试
 ```
 
 ---
@@ -202,10 +251,10 @@ dsh-cost-router/
 
 ### 推荐给测试者：下载 Release 包
 
-打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.4.2](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2)，直接下载地址：
+打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.5.0](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.5.0)，直接下载地址：
 
 ```text
-https://github.com/jy02815803/dsh-cost-router/releases/download/v0.4.2/dsh-cost-router-0.4.2.tgz
+https://github.com/jy02815803/dsh-cost-router/releases/download/v0.5.0/dsh-cost-router-0.5.0.tgz
 ```
 
 在 DSH Desktop 的「插件」页选择本地包/本地目录安装，或把包解压后通过 profile 的 `file:` 依赖安装。**安装完成后必须正常重启 Harness**；客户端依赖图只在启动时组装，只刷新页面不生效。开源协作也可 fork、提 Issue 或 Pull Request。
@@ -245,6 +294,7 @@ node test/smoke.test.mjs
 node test/auto-plan.test.mjs
 node test/webserver-lifecycle.test.mjs
 node test/trust-contract.test.mjs
+node test/explain-audit.test.mjs
 ```
 
 `smoke.test.mjs` 覆盖：任务分类、异构判定、成本口径（含"负倍率不能当免费"）、settings 目录抽取、路由策略（免费优先 / 视觉门槛 / 强制强模型 / 显式 pin）、端到端编排、失败隔离、多模态通道（图片只进视觉子任务）、预算熔断、分解结果非法 JSON、中止向上抛、`longdoc` 能力评分、多次 run 预算隔离、客户端 inject 清单。
@@ -254,6 +304,10 @@ node test/trust-contract.test.mjs
 `webserver-lifecycle.test.mjs` 覆盖：无 `webServer` 时四个工具仍注册、服务晚发布、GET/HEAD/POST、同源校验、请求体上限、服务替换、重复发布与插件卸载。全部在隔离的临时 `DSH_HOME` 中运行。
 
 `trust-contract.test.mjs` 覆盖：`planId` 方案复用、目录快照、成本护栏、逐步预算、跨轮自动研判和 `dryRun`。
+
+`explain-audit.test.mjs` 覆盖：决策卡片的置信度与原因、警告文案、估实偏差的各档质量、价格来源归类，以及审计的默认关闭、实时开关、白名单字段（正文与凭据不得入库）、`clear()` 删除与文件缺席时的幂等。
+
+`webserver-lifecycle.test.mjs` 还断言 `?diagnostics=1` 里 `auditEnabled` 与 `guardrails` 四个护栏字段存在且有明确默认值，并且 `auditEnabled` 传非布尔值返回 400、`clearAudit` 失败返回 500。
 
 ---
 
@@ -268,6 +322,20 @@ node test/trust-contract.test.mjs
 ---
 
 ## 版本变更
+
+### 0.5.0
+
+**把「为什么这么判」和「钱花得准不准」摆到明面上，同时修掉一个假开关。**
+
+- 决策卡片：每次研判输出 `decision`/`confidence`/`reasons`/`warnings`，说明识别到几类能力、为什么拆或不拆、价格来自声明还是推断。卡片只含元数据，不含任务正文。
+- 估实偏差：成本报告新增 `estimate`，把当初的估算和实际花费放在一起，给出 `delta`/`ratio` 与质量档 `exact`/`good`/`fair`/`poor`/`estimate-unavailable`。估算为 0 时不装作精确，直接标「估算不可用」。
+- 价格来源区分 `declared`（渠道声明）/`heuristic`（按名字推断免费）/`unknown`（默认口径），避免把推断当账单。
+- 本地隐私审计：可选、**默认关闭**，只写 `audit.jsonl` 白名单九字段的元数据，不联网、不上传、可在设置页一键删除。
+- 护栏可见：`dryRun`、`freeOnly`、`maxMultiplier`、`defaultBudget` 全部进入配置 schema，并在设置页「运行状态」与 `?diagnostics=1` 里显示实际生效值。
+- **修复观察模式打不开的缺陷**：0.4.2 的实现读 `config.dryRun`，但 `Config` 从未声明该字段，于是无论怎么配都是 `false`。现在 `dryRun` 与 `defaultBudget` 已正式声明并接线。
+- 界面开关补齐：设置页新增「本地隐私审计」开关与「删除审计记录」按钮，与自动研判一样免重启生效。
+- 新增 `test/explain-audit.test.mjs`；CI 语法与测试矩阵纳入 `audit.js`/`explain.js`/`pricing.js`。
+- 版本号 `0.4.2.1` → `0.5.0`。
 
 ### 0.4.2
 
@@ -318,7 +386,7 @@ node test/trust-contract.test.mjs
 ```sh
 git init
 git add .
-git commit -m "dsh-cost-router 0.4.2"
+git commit -m "dsh-cost-router 0.5.0"
 git branch -M main
 git remote add origin https://github.com/jy02815803/dsh-cost-router.git
 git push -u origin main
