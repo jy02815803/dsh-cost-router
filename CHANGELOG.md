@@ -11,9 +11,13 @@
 
 ### Fixed
 
-- CI 自 `0.4.2` 起从未真正跑过：`actions/setup-node` 的 `cache: npm` 要求仓库存在 lockfile，而本插件只有 `peerDependencies`、不提供 `package-lock.json`，导致 workflow 在依赖准备阶段就以「Dependencies lock file is not found」失败，后续的语法检查与单元测试根本没执行。现移除 npm 缓存（测试通过桩模块运行，无需 `npm install`），语法检查补齐 `lib/auto-plan.js`、`lib/catalog.js`、`lib/llm.js`、`lib/router.js`，并增加 `workflow_dispatch` 以便手动触发验证。CI 配置不进入 npm 包，因此不影响 `0.5.0` 的产物与已发布的 Release。
+- CI 自 `0.4.2` 起从未真正跑过：`actions/setup-node` 的 `cache: npm` 要求仓库存在 lockfile，而本插件只有 `peerDependencies`、不提供 `package-lock.json`，导致 workflow 在依赖准备阶段就以「Dependencies lock file is not found」失败，后续的语法检查与单元测试根本没执行。现移除 npm 缓存（测试通过桩模块运行，无需 `npm install`），语法检查补齐 `lib/auto-plan.js`、`lib/catalog.js`、`lib/llm.js`、`lib/router.js`，并增加 `workflow_dispatch` 以便手动触发验证。
+- CI 改为 Node 20 / 22 / 24 兼容矩阵：运行时语法在三个版本全量验证；`auto-plan.test.mjs`、`trust-contract.test.mjs`、`webserver-lifecycle.test.mjs` 使用 Node 22.15+ 才有的 `registerHooks()`，因此 Node 20 只运行不依赖该 API 的两个测试，Node 22 / 24 运行全部 5 个测试。`package.json` 的 `engines` 保持 `>=18.0.0`，测试版本要求写入 `README.md`、`CONTRIBUTING.md` 与新增的 `test/README.md`。
+- CI 配置与测试说明不进入 npm 包，因此不影响 `0.5.0` 的产物与已发布的 Release。
 
 ## [0.5.0] - 2026-11-05
+
+> 维护说明：2026-11-05 发布后修复了此前一直未真正执行的 CI，并补充 Node 20/22/24 兼容矩阵与测试版本说明。相关改动都在 CI 配置和文档里，不进入 npm 包，所以插件版本保持 `0.5.0`；`main` 打包出的 tgz 内容会与 Release 附件略有差异（仅文档与 package 的体积），功能代码完全一致。详见下方 `[Unreleased]`。
 
 ### Added
 

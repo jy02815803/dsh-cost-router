@@ -289,6 +289,8 @@ dsh plugin --profile web add file:D:/DSharness/dsh-cost-router
 
 ## 测试
 
+插件运行时支持 Node 20 / 22 / 24（见 `package.json` 的 `engines`），GitHub Actions 会在这三个版本上分别验证。本地跑全量测试需要 Node >= 22.15：`auto-plan.test.mjs`、`trust-contract.test.mjs`、`webserver-lifecycle.test.mjs` 使用 `node:module` 的 `registerHooks()` 注入 DSH 模块桩，这个 API 在 Node 20 上不存在。`smoke.test.mjs` 与 `explain-audit.test.mjs` 不依赖该 API，可在 Node 20 上单独运行。详见 `test/README.md`。
+
 ```sh
 node test/smoke.test.mjs
 node test/auto-plan.test.mjs

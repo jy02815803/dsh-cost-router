@@ -4,13 +4,11 @@
 
 ## 本地检查
 
+全量检查需要 Node >= 22.15：部分测试使用 `registerHooks()` 注入 DSH 模块桩。插件运行时本身由 CI 在 Node 20 / 22 / 24 上分别做语法验证。详见 `test/README.md`。
+
 ```sh
-node --check lib/host.js
-node --check lib/state.js
-node --check lib/client.js
-node test/smoke.test.mjs
-node test/auto-plan.test.mjs
-node test/webserver-lifecycle.test.mjs
+for f in lib/*.js test/*.test.mjs; do node --check "$f"; done
+for f in test/*.test.mjs; do node "$f"; done
 npm pack --dry-run
 ```
 
