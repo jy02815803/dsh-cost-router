@@ -6,6 +6,7 @@ on:
     tags: ['v*']
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,7 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
+        # 这里故意不启用 npm 缓存：本插件只有 peerDependencies、没有 lockfile，
+        # cache: npm 会让 setup-node 因「Dependencies lock file is not found」直接失败。
+        # 测试通过桩模块运行，不需要 npm install。
       - name: Syntax checks
         run: |
           node --check lib/host.js
@@ -31,6 +34,10 @@ jobs:
           node --check lib/audit.js
           node --check lib/explain.js
           node --check lib/pricing.js
+          node --check lib/auto-plan.js
+          node --check lib/catalog.js
+          node --check lib/llm.js
+          node --check lib/router.js
           node --check test/smoke.test.mjs
           node --check test/auto-plan.test.mjs
           node --check test/webserver-lifecycle.test.mjs

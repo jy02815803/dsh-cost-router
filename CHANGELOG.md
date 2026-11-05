@@ -9,6 +9,10 @@
 - 0.6.0：质量、兼容矩阵、多语言规则与自动化评测。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
 
+### Fixed
+
+- CI 自 `0.4.2` 起从未真正跑过：`actions/setup-node` 的 `cache: npm` 要求仓库存在 lockfile，而本插件只有 `peerDependencies`、不提供 `package-lock.json`，导致 workflow 在依赖准备阶段就以「Dependencies lock file is not found」失败，后续的语法检查与单元测试根本没执行。现移除 npm 缓存（测试通过桩模块运行，无需 `npm install`），语法检查补齐 `lib/auto-plan.js`、`lib/catalog.js`、`lib/llm.js`、`lib/router.js`，并增加 `workflow_dispatch` 以便手动触发验证。CI 配置不进入 npm 包，因此不影响 `0.5.0` 的产物与已发布的 Release。
+
 ## [0.5.0] - 2026-11-05
 
 ### Added
