@@ -60,9 +60,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
   const evaluation = JSON.parse(readFileSync(path.join(root, 'config', 'auto-plan-eval.json'), 'utf8'))
   assert.equal(evaluation.schemaVersion, 1)
-  assert.equal(evaluation.cases.length, 16)
-  assert.equal(evaluation.cases.filter((c) => c.language === 'zh').length, 8)
-  assert.equal(evaluation.cases.filter((c) => c.language === 'en').length, 8)
+  assert.equal(evaluation.cases.length, 20)
+  assert.equal(evaluation.cases.filter((c) => c.language === 'zh').length, 10)
+  assert.equal(evaluation.cases.filter((c) => c.language === 'en').length, 10)
+  assert.ok(evaluation.cases.filter((c) => c.expectDecision === 'meta').length >= 4)
 }
 
 console.log('0.6.0 质量与兼容回归测试通过')

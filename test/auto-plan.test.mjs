@@ -87,6 +87,28 @@ function collectHooks() {
   const simple = shouldAutoPlan('帮我起草一份放假通知,语气正式一点', policy)
   assert.equal(simple.trigger, true)
   assert.equal(simple.willDecompose, false, '单一写作任务不该拆')
+  assert.equal(simple.decision, 'single')
+
+  // 元问题 / 追问上轮执行：不是新任务，不能触发拆解提示或自动执行。
+  const meta = shouldAutoPlan('这一轮判定要拆分，它都分别用的哪个模型', policy)
+  assert.equal(meta.decision, 'meta')
+  assert.equal(meta.willDecompose, false)
+  assert.equal(meta.autoEligible, undefined)
+  assert.match(meta.reason, /追问|复盘/)
+}
+
+// ── 元问题只记录、不注入 ────────────────────────────────────────────────────
+{
+  const { handlers, ctx } = collectHooks()
+  installAutoPlan(ctx, { enabled: true, minChars: 12 })
+  const hook = handlers[0].fn
+  const messages = [{ role: 'user', content: [{ type: 'text', text: '上一轮用了哪个模型，为什么没有执行？' }] }]
+  const out = await hook({}, async () => ({ kind: 'enter', messages }))
+  assert.equal(out.messages.length, 1, '追问上轮执行时不应注入成本路由提示')
+  const runtime = (await import('../lib/runtime.js')).getRuntime()
+  assert.equal(runtime.lastVerdict?.decision, 'meta', '元问题要进入可见运行态')
+  assert.equal(runtime.lastVerdict?.injected, false)
+  assert.equal(runtime.lastVerdict?.autoEligible, false)
 }
 
 // ── 注入文本的语义 ──────────────────────────────────────────────────────────

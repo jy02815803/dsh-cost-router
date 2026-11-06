@@ -42,12 +42,16 @@ jobs:
         run: |
           node test/smoke.test.mjs
           node test/explain-audit.test.mjs
+          node test/quality-compat.test.mjs
+          node test/visibility-control.test.mjs
       - name: Unit tests with DSH module stubs (Node >= 22.15)
         if: matrix.node != '20'
         run: |
           node test/auto-plan.test.mjs
           node test/webserver-lifecycle.test.mjs
           node test/trust-contract.test.mjs
+          node test/quality-compat.test.mjs
+          node test/visibility-control.test.mjs
       - name: Offline auto-plan evaluation
         if: matrix.node == '24'
         run: node scripts/evaluate-auto-plan.mjs

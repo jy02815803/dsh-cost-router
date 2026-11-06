@@ -51,6 +51,18 @@
       "dshVersion": "0.1.7-rc.2",
       "node": "20/22/24",
       "status": "expected"
+    },
+    {
+      "verifiedAt": null,
+      "evidence": [
+        "npm test 与 GitHub Actions Node 20/22/24 矩阵通过",
+        "发布前需确认输入框右侧胶囊、overlay 面板、控制路由与诊断字段"
+      ],
+      "pluginVersion": "0.7.0",
+      "status": "pending-real-machine",
+      "node": "24.21.0",
+      "os": "Windows 11",
+      "dshVersion": "0.2.1-rc.3"
     }
   ]
 }

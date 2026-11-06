@@ -272,7 +272,7 @@ try {
   assert.equal(getRes.status, 200)
   assert.match(getRes.headers['content-type'], /application\/json/)
   assert.equal(getRes.headers['cache-control'], 'no-store')
-  assert.deepEqual(parseJson(getRes), { enabled: true, minChars: 12, auditEnabled: false, persisted: false })
+  assert.deepEqual(parseJson(getRes), { enabled: true, minChars: 12, auditEnabled: false, surfaceVerdict: true, qualityMode: 'balanced', executionMode: 'manual', autoExecute: false, persisted: false })
 
   // HEAD 与 GET 同状态、同头部，但不能返回响应体。
   const headRes = await request(routes[0], { method: 'HEAD' })
@@ -287,24 +287,24 @@ try {
     body: JSON.stringify({ enabled: false, minChars: 20 }),
   })
   assert.equal(postRes.status, 200)
-  assert.deepEqual(parseJson(postRes), { enabled: false, minChars: 20, auditEnabled: false, persisted: true })
+  assert.deepEqual(parseJson(postRes), { enabled: false, minChars: 20, auditEnabled: false, surfaceVerdict: true, qualityMode: 'balanced', executionMode: 'manual', autoExecute: false, persisted: true })
 
   const stateFile = path.join(sandbox, 'dsh-cost-router', 'state.json')
   assert.deepEqual(
     JSON.parse(readFileSync(stateFile, 'utf8')),
-    { autoPlanEnabled: false, autoPlanMinChars: 20, auditEnabled: false },
+    { autoPlanEnabled: false, autoPlanMinChars: 20, auditEnabled: false, surfaceVerdict: true, qualityMode: 'balanced' },
     'POST 后状态文件应立即更新为新格式',
   )
 
   // 再读一次应反映刚才持久化的值。
   const getAfterPost = await request(routes[0], { method: 'GET' })
-  assert.deepEqual(parseJson(getAfterPost), { enabled: false, minChars: 20, auditEnabled: false, persisted: true })
+  assert.deepEqual(parseJson(getAfterPost), { enabled: false, minChars: 20, auditEnabled: false, surfaceVerdict: true, qualityMode: 'balanced', executionMode: 'manual', autoExecute: false, persisted: true })
 
   // 诊断接口只暴露脱敏排障字段，不返回任务正文、token 或凭据。
   const diagRes = await request(routes[0], { method: 'GET', path: '/dsh-cost-router/state?diagnostics=1' })
   assert.equal(diagRes.status, 200)
   const diagnostics = parseJson(diagRes)
-  assert.equal(diagnostics.version, '0.6.0')
+  assert.equal(diagnostics.version, '0.7.0')
   assert.equal(diagnostics.stateRoute, '/dsh-cost-router/state')
   assert.equal(diagnostics.webServer, true)
   assert.deepEqual(diagnostics.tools, [
@@ -353,7 +353,7 @@ try {
   assert.deepEqual(parseJson(largeBodyRes), { error: 'request-body-too-large' })
   assert.deepEqual(
     JSON.parse(readFileSync(stateFile, 'utf8')),
-    { autoPlanEnabled: false, autoPlanMinChars: 20, auditEnabled: false },
+    { autoPlanEnabled: false, autoPlanMinChars: 20, auditEnabled: false, surfaceVerdict: true, qualityMode: 'balanced' },
     '被拒绝的超大请求不能改状态',
   )
 
@@ -367,7 +367,7 @@ try {
   assert.notEqual(routes[0], stateRoute, '新服务应持有新注册的路由对象')
   const replacementGet = await request(routes[0], { method: 'GET' })
   assert.equal(replacementGet.status, 200)
-  assert.deepEqual(parseJson(replacementGet), { enabled: false, minChars: 20, auditEnabled: false, persisted: true })
+  assert.deepEqual(parseJson(replacementGet), { enabled: false, minChars: 20, auditEnabled: false, surfaceVerdict: true, qualityMode: 'balanced', executionMode: 'manual', autoExecute: false, persisted: true })
 
   // ── 审计开关必须是真开关 ────────────────────────────────────────────────
   // 0.4.x 出过「界面显示已开启、磁盘一个字节都没写」的假开关：开关值在构造时

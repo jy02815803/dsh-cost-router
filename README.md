@@ -2,26 +2,29 @@
 
 [![CI](https://github.com/jy02815803/dsh-cost-router/actions/workflows/ci.yml/badge.svg)](https://github.com/jy02815803/dsh-cost-router/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/jy02815803/dsh-cost-router)](https://github.com/jy02815803/dsh-cost-router/releases)
 
-用便宜/免费的模型做调度，把复杂任务拆开，看图、读长文、深度推理、写稿分别交给最合适的模型，最后统一汇总。
+在能力匹配的前提下，把复杂任务拆开：看图、读长文、深度推理、写稿分别交给真正能做好它的模型，最后统一汇总；在同等能力下优先少花积分。
 
-**核心主张：省钱靠的不是"选对模型"，而是"上下文隔离" + "能力匹配"。**
+**核心主张：能力是门槛，质量是目标，成本是约束。** 不是简单选最便宜/免费的模型，而是避免强模型干简单活、弱模型干复杂活。
 
-当前版本 **0.6.0**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。兼容状态见 [DSH 版本兼容矩阵](docs/COMPATIBILITY.md)。
+当前版本 **0.7.0**，变更见 `CHANGELOG.md` 与文末「版本变更」；长期路线见 `ROADMAP.md`。兼容状态见 [DSH 版本兼容矩阵](docs/COMPATIBILITY.md)。
 
 ---
 
-## 自动研判开关（默认开启）
+## 自动研判开关与可见卡片（默认开启）
 
-插件设置里有开关：**设置 → 内置插件 → 成本路由**（部分 DSH 版本显示为「设置 → 插件 → 成本路由」），一个「自动研判」的开关。**默认开启**。
+插件设置里有开关：**设置 → 内置插件 → 成本路由**（部分 DSH 版本显示为「设置 → 插件 → 成本路由」）。输入框右侧还会出现一个「最近一次研判」胶囊。**默认开启，默认手动执行**。
 
-**打开后**：每条任务在交给模型之前，先做一次**免费**的规则研判——
+**打开后**：每条任务在交给模型之前，先做一次**免费**的规则研判，结果显示在胶囊和设置面板里——
 
-- 判定「该拆」→ 提示模型先调 `cost_router_plan`，把方案（拆几块、派给谁、大概花多少）告诉你，你确认后再执行。
-- 判定「不用拆」→ 什么都不提示，直接单模型把活干完。你看到的体验和平时完全一样，不会被打扰。
+- 判定「建议拆分」→ 只展示判断与原因；你可以在面板里点「生成方案」，看到每块派给哪个模型、预估相对成本和能力证据后，再点「执行此方案」。
+- 判定「建议单模型」或「追问/复盘」→ 显示对应结论；追问上轮不会被误判为新任务，也不会注入拆解提示。
+- 判定「不用拆」的旧提示仍会注入给模型，但插件不会替你执行；是否采纳提示取决于会话模型，这是已知限制。
 
-**关闭后**：插件完全不介入，四个工具仍然可用，想用的时候手动调。
+**0.7.0 的执行模式固定为 `manual`**：没有自动执行，所有 `plan` / `run` 都要求用户点按钮并确认。`plan` 会调用一次规划模型，`run` 会按方案调用多个模型；按钮文案会明确提示费用。自动执行属于后续 0.8.0 的范围。
 
-**点一下立刻生效，不需要重启 Harness。**
+**关闭后**：插件不注入提示，四个工具与手动面板仍可用。
+
+**点一下立刻生效，不需要重启 Harness。** 质量档 `quality-first / balanced / credit-saver` 可实时记录，但路由门槛的完整切换需要下次重启 Harness，界面会明确说明。
 
 ### 为什么研判不花钱
 
@@ -31,7 +34,7 @@
 
 ### 一个已知限制
 
-开关通过 `agent/pre-step` 钩子往消息里注入一条提示，这属于**强指令**而非硬约束——模型看到会照做，但技术上不能 100% 强制。要做到绝对强制就得让插件接管整个对话循环，那样又慢又脆，不值得。
+开关通过 `agent/pre-step` 钩子往消息里注入一条提示，这属于**强指令**而非硬约束——模型可能不采纳。阶段 0 已核实 DSH 的 `agent/pre-step` 只能改写消息或 `reject` 结束轮次，不能把插件的执行结果直接写成本轮回复；`defineTool.output.render` 也只支持文本块。因此 0.7.0 把「调不调」从模型手里拿回来，放到输入框右侧胶囊和 overlay 面板里，由用户显式点击控制路由；不再假装注入提示等于自动执行。
 
 ### 开关状态存在哪
 
@@ -115,8 +118,9 @@
 
 | 工具 | 作用 | 花钱吗 |
 |---|---|---|
-| `cost_router_plan` | 研判 → 给出 `planId`、方案和预估成本 | 只有需要拆时才花一次分解费 |
+| `cost_router_plan` | 研判 → 给出 `planId`、中文方案卡片和预估成本 | 只有需要拆时才花一次分解费 |
 | `cost_router_run` | 传 `planId` 复用已确认方案执行，返回成品和真实花费 | 花 |
+| 输入框右侧胶囊 / 控制路由 | 显示最近研判、质量档、手动生成/执行/取消 | 只读不花钱；点击 `plan` / `run` 才按提示产生模型费用 |
 | `cost_router_report` | 逐次调用明细、各模型花费、合计 | 不花 |
 | `cost_router_models` | 列出可用模型：是否支持图片、上下文窗口、成本倍率 | 不花 |
 
@@ -253,10 +257,10 @@ dsh-cost-router/
 
 ### 唯一推荐：安装 Release 的 `.tgz` 包
 
-打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.6.0](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.6.0)，直接下载地址：
+打开 [Releases 页面](https://github.com/jy02815803/dsh-cost-router/releases)，下载最新版的 `dsh-cost-router-<版本>.tgz`。当前稳定版本为 [v0.7.0](https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.7.0)，直接下载地址：
 
 ```text
-https://github.com/jy02815803/dsh-cost-router/releases/download/v0.6.0/dsh-cost-router-0.6.0.tgz
+https://github.com/jy02815803/dsh-cost-router/releases/download/v0.7.0/dsh-cost-router-0.7.0.tgz
 ```
 
 在 DSH Desktop 的「插件」页选择「本地包 / `.tgz`」安装这个文件。**安装完成后必须正常重启 Harness**；客户端依赖图只在启动时组装，只刷新页面不生效。已有版本直接覆盖安装，开关状态会保留。
@@ -303,7 +307,7 @@ npm test
 node scripts/evaluate-auto-plan.mjs --json
 ```
 
-评测集在 `config/auto-plan-eval.json`，覆盖中英文短句、否定、指定模型、图片、长文、紧急任务与代码排查；当前 16 条样本的触发判定、拆分建议和能力识别准确率均为 100%，规则回退会让 `npm test` 失败。
+评测集在 `config/auto-plan-eval.json`，覆盖中英文短句、否定、指定模型、图片、长文、紧急任务、代码排查与追问/元问题；当前 20 条样本的触发判定、决策类型、拆分建议和能力识别准确率均为 100%，规则回退会让 `npm test` 失败。
 
 `smoke.test.mjs` 覆盖：任务分类、异构判定、成本口径（含"负倍率不能当免费"）、settings 目录抽取、路由策略（免费优先 / 视觉门槛 / 强制强模型 / 显式 pin）、端到端编排、失败隔离、多模态通道（图片只进视觉子任务）、预算熔断、分解结果非法 JSON、中止向上抛、`longdoc` 能力评分、多次 run 预算隔离、客户端 inject 清单。
 
@@ -316,6 +320,8 @@ node scripts/evaluate-auto-plan.mjs --json
 `explain-audit.test.mjs` 覆盖：决策卡片的置信度与原因、警告文案、估实偏差的各档质量、价格来源归类，以及审计的默认关闭、实时开关、白名单字段（正文与凭据不得入库）、`clear()` 删除与文件缺席时的幂等。
 
 `quality-compat.test.mjs` 覆盖：中英文规则分离、强模型措辞、分解结果重复 id / 空指令 / 未知 kind / 悬空依赖 / 依赖环，以及兼容矩阵与评测集的机器可读结构。
+
+`visibility-control.test.mjs` 覆盖：元问题不进入拆解、方案卡片不含任务正文、质量优先模式选能力更高模型、控制路由需 `confirm: true`、输入框右侧胶囊插槽与手动模式契约。
 
 `webserver-lifecycle.test.mjs` 还断言 `?diagnostics=1` 里 `auditEnabled` 与 `guardrails` 四个护栏字段存在且有明确默认值，并且 `auditEnabled` 传非布尔值返回 400、`clearAudit` 失败返回 500。
 

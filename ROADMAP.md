@@ -23,6 +23,17 @@
   `test/explain-audit.test.mjs` 覆盖卡片与审计白名单；`webserver-lifecycle.test.mjs` 用真实 HTTP 请求验证默认关闭、非布尔值拒绝、开关联动与护栏默认值。
 - 遗留到 0.6.0：审计暂不记录耗时与失败原因明细；估算偏差的量化汇总报告需要跨会话聚合，等离线评测集一起做。
 
+## 0.7.0 — 研判显性化与手动控制（已发布）
+
+- 阶段 0 实证：`agent/pre-step` 的 `reject` 只会把轮次收口成 `blocked`，不能写入插件执行结果；`defineTool.output.render` 只支持文本块。✅ 因此本版不假装自动执行，改用 DSH 已声明的 `conversation.input.right` / `shell.overlay` 插槽承载可见胶囊与面板。
+- `lastVerdict` 写入运行态：显示 `decompose / single / meta / skip`、`kinds`、原因、是否注入、`autoEligible=false`；不含任务正文。✅
+- 元问题 / 追问上轮单独识别：不再误判「无明显特征」或建议拆解，也不注入提示。✅ 评测集扩到 20 条，决策类型纳入准确率。
+- `plan` 返回中文方案卡片：每块能力、模型、倍率、预估和 `planId` 可见；工具输出 README 化。✅ 卡片不含任务正文、指令或凭据。
+- 控制路由 `GET/POST /dsh-cost-router/control`：`plan / run / cancel` 全部要求用户点击并带 `confirm: true`；`run` 必须带 `planId`。✅ 执行模式固定 `manual`，`autoExecute=false`。
+- `qualityMode`：`quality-first / balanced / credit-saver`，默认 `balanced`；视觉门槛不降级，质量优先在能力达标后先选能力与上下文，均衡档优先低倍率。✅ 完整切换在下次重启生效，界面明确提示。
+- `surfaceVerdict` 开关：可隐藏输入框右侧胶囊；状态文件兼容 0.4/0.5/0.6 旧格式。✅
+- 完成标准：用户能看到「刚判了什么」、能点按钮生成方案/执行、元问题不打扰、手动模式零自动执行。✅ 本机 DSH 重启后实机验收结果见兼容矩阵。
+
 ## 0.6.0 — 质量与兼容（已发布）
 
 - 分解结果校验补齐：数量上限、重复 id、非法 `kind`、空指令、悬空依赖与依赖环都在调用模型前拦截。✅ `validateSubtasks()` 导出并由 `quality-compat.test.mjs` 覆盖。

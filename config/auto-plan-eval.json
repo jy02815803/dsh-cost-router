@@ -1,186 +1,242 @@
 {
+  "description": "离线自动研判评测集。预期值是「是否提示先研判」「决策类型」和「规则预判是否建议拆分」；不调用模型、不访问网络。",
+  "schemaVersion": 1,
   "cases": [
     {
       "expectTrigger": false,
-      "minChars": 12,
-      "id": "zh-short-ok",
-      "expectDecompose": false,
       "text": "好的",
+      "expectKinds": [],
+      "expectDecision": "skip",
+      "id": "zh-short-ok",
       "language": "zh",
-      "expectKinds": []
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-simple-notice",
-      "expectDecompose": false,
       "text": "帮我起草一份正式的放假通知",
-      "language": "zh",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "zh-simple-notice",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-negation",
-      "expectDecompose": false,
       "text": "不要拆这个简短的会议纪要，直接整理成三条要点",
-      "language": "zh",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "zh-negation",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-pinned-model",
-      "expectDecompose": false,
       "text": "指定用 workbuddy/Hy3，把这段会议纪要压缩成三条要点",
-      "language": "zh",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "zh-pinned-model",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-vision-writing",
-      "expectDecompose": true,
       "text": "看这五张扫描件截图，提取表格数据，再写一份分析报告",
-      "language": "zh",
       "expectKinds": [
         "vision",
         "writing"
-      ]
+      ],
+      "expectDecision": "decompose",
+      "id": "zh-vision-writing",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": true
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-longdoc-analysis",
-      "expectDecompose": true,
       "text": "通读全文，提取数据，交叉分析，然后写成结论",
-      "language": "zh",
       "expectKinds": [
         "longdoc",
         "reasoning",
         "writing"
-      ]
+      ],
+      "expectDecision": "decompose",
+      "id": "zh-longdoc-analysis",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": true
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-urgent",
-      "expectDecompose": false,
       "text": "紧急，马上把这份通知润色成正式上报稿，务必准确",
-      "language": "zh",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "zh-urgent",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "zh-code-review",
-      "expectDecompose": false,
       "text": "看一下这个 Python 报错，排查原因并给出修复建议",
-      "language": "zh",
       "expectKinds": [
         "code",
         "reasoning"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "zh-code-review",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": false,
-      "minChars": 12,
-      "id": "en-short-ok",
-      "expectDecompose": false,
       "text": "OK",
+      "expectKinds": [],
+      "expectDecision": "skip",
+      "id": "en-short-ok",
       "language": "en",
-      "expectKinds": []
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-simple-summary",
-      "expectDecompose": false,
       "text": "Write a short meeting summary with three bullet points",
-      "language": "en",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "en-simple-summary",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-negation",
-      "expectDecompose": false,
       "text": "Do not split this short memo, just summarize it in three lines",
-      "language": "en",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "en-negation",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-pinned-model",
-      "expectDecompose": false,
       "text": "Use workbuddy/Hy3 to draft the release notes for this update",
-      "language": "en",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "en-pinned-model",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-vision-report",
-      "expectDecompose": true,
       "text": "Read this chart image, extract the table, compare the rows, and write a report",
-      "language": "en",
       "expectKinds": [
         "vision",
         "writing"
-      ]
+      ],
+      "expectDecision": "decompose",
+      "id": "en-vision-report",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": true
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-longdoc-analysis",
-      "expectDecompose": true,
       "text": "Read the entire document, extract data, analyze why it changed, and write conclusions",
-      "language": "en",
       "expectKinds": [
         "longdoc",
         "reasoning",
         "writing"
-      ]
+      ],
+      "expectDecision": "decompose",
+      "id": "en-longdoc-analysis",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": true
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-urgent",
-      "expectDecompose": false,
       "text": "Urgent: polish this notice into a board-ready final version; it must be exact",
-      "language": "en",
       "expectKinds": [
         "writing"
-      ]
+      ],
+      "expectDecision": "single",
+      "id": "en-urgent",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": false
     },
     {
       "expectTrigger": true,
-      "minChars": 12,
-      "id": "en-code-review",
-      "expectDecompose": true,
       "text": "Debug this Python stack trace, diagnose the root cause, and propose a fix",
-      "language": "en",
       "expectKinds": [
         "code",
         "reasoning"
-      ]
+      ],
+      "expectDecision": "decompose",
+      "id": "en-code-review",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": true
+    },
+    {
+      "expectTrigger": true,
+      "text": "这一轮判定要拆分，它都分别用的哪个模型",
+      "expectKinds": [],
+      "expectDecision": "meta",
+      "id": "zh-meta-models",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
+    },
+    {
+      "expectTrigger": true,
+      "text": "上一轮你说要拆，最后拆了吗",
+      "expectKinds": [],
+      "expectDecision": "meta",
+      "id": "zh-meta-execution",
+      "language": "zh",
+      "minChars": 12,
+      "expectDecompose": false
+    },
+    {
+      "expectTrigger": true,
+      "text": "Which model did it use in the previous round and why did it not run",
+      "expectKinds": [],
+      "expectDecision": "meta",
+      "id": "en-meta-models",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": false
+    },
+    {
+      "expectTrigger": true,
+      "text": "Did it actually split the task last time",
+      "expectKinds": [],
+      "expectDecision": "meta",
+      "id": "en-meta-explain",
+      "language": "en",
+      "minChars": 12,
+      "expectDecompose": false
     }
-  ],
-  "schemaVersion": 1,
-  "description": "离线自动研判评测集。预期值是「是否提示先研判」和「规则预判是否建议拆分」；不调用模型、不访问网络。"
+  ]
 }

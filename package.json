@@ -1,6 +1,6 @@
 {
   "name": "dsh-cost-router",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "DSH plugin: 复杂任务分解 + 多模型分派。用 DSH 已配置的模型渠道（含免费渠道）按能力匹配子任务，汇总成稿并逐笔记账。",
   "license": "MIT",
   "type": "module",

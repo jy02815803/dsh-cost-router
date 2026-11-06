@@ -6,9 +6,35 @@
 
 ### Planned
 
+- 0.8.0：受控自动执行（`executionMode`、预算/调用数/超时护栏、进度事件、取消与失败策略），需先解决宿主无法在 `pre-step` 直接写最终回复的问题。
 - 1.0.0：稳定契约、迁移策略、贡献流程与公开 Release。
 - provider 级并发、超时、限流退避、失败升级与按 `contextWindow` 分层汇总。
 - 更多 DSH 版本的实机兼容记录、脱敏目录 fixtures 与页面冒烟。
+
+## [0.7.0] - 2026-11-06
+
+### Added
+
+- `lib/presentation.js`：生成不含任务正文的中文方案卡片，`cost_router_plan` 与工具输出都显示每块能力、模型、倍率和预估。
+- `lib/control.js`：新增同源控制路由 `GET/POST /dsh-cost-router/control`。`plan / run / cancel` 必须由用户点击并带 `confirm: true`；`run` 必须复用 `planId`。执行模式固定 `manual`，`autoExecute=false`。
+- 输入框右侧「最近一次研判」胶囊与 overlay 面板：用 DSH 已声明的 `conversation.input.right` / `shell.overlay` 插槽，显示最近判断、质量档、方案摘要和手动控制按钮。
+- `lastVerdict` / `lastPlanCard` / `lastRunCard` 写入运行态并进入诊断；`?diagnostics=1` 新增 `lastVerdict`、`lastPlanCard`、`surfaceVerdict`、`qualityMode`、`executionMode`、`autoExecute`。
+- `qualityMode` 三档：`quality-first / balanced / credit-saver`，默认 `balanced`；`quality-first` 在能力达标后优先能力与上下文，`balanced` / `credit-saver` 优先低倍率；视觉门槛永不降级。
+- `surfaceVerdict` 开关可隐藏胶囊；状态文件新增字段但兼容旧格式。
+- 评测集扩展为 20 条中英样本，新增 4 条追问/元问题；新增 `test/visibility-control.test.mjs`。
+
+### Changed
+
+- `classifyTurn()` 识别「追问上轮 / 元问题 / 指代前文」；`shouldAutoPlan()` 返回 `decision` 与 `language`。`meta` 只记录不注入，也不进入自动执行候选。
+- 评测脚本统计「决策类型准确率」；`npm test` 现在跑 25 个语法检查、7 个离线测试和 1 个评测集，任一准确率不足 100% 即失败。
+- README 重写产品原则：能力是门槛、质量是目标、成本是约束；明确自动研判只给提示，0.7.0 不自动执行。
+- 版本 `0.6.0` → `0.7.0`。
+
+### Fixed
+
+- 追问「这一轮分别用了哪个模型」不再被判成「无明显特征」后注入「不用拆」提示。
+- 静默失败：研判结果不再只藏在注入文本里，用户可从胶囊、设置页和诊断接口看到刚判了什么以及是否注入。
+- 「调不调」不再只靠会话模型：面板按钮通过 Host 控制路由显式触发，Host 侧二次校验确认标志。
 
 ### Added
 
@@ -118,7 +144,8 @@
 
 - 补齐 `settings.plugins.tab` 所需的客户端依赖；修复 `minChars`、中止、跨 run 预算隔离与 `longdoc` 评分。
 
-[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/jy02815803/dsh-cost-router/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.7.0
 [0.6.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.6.0
 [0.5.0]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.5.0
 [0.4.2.1]: https://github.com/jy02815803/dsh-cost-router/releases/tag/v0.4.2.1
